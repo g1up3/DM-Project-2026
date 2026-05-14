@@ -1,0 +1,25 @@
+query_id,name,category,system,median_ms,min_ms,max_ms,iqr_ms,n_rows,equal_results
+Q01,Top scorers by season,A_relational,postgres,11.678,10.516,36.83,13.506,10,True
+Q01,Top scorers by season,A_relational,neo4j,12.083,11.148,49.505,22.938,10,True
+Q02,League standings by season,A_relational,postgres,5.47,4.484,7.544,2.637,20,True
+Q02,League standings by season,A_relational,neo4j,7.269,6.488,10.24,3.098,20,True
+Q03,Goals per match by league,A_relational,postgres,4.422,2.564,9.368,4.3,11,True
+Q03,Goals per match by league,A_relational,neo4j,8.146,7.047,12.176,3.182,11,True
+Q04,Home win percentage by team,A_relational,postgres,16.338,15.992,18.672,2.177,10,True
+Q04,Home win percentage by team,A_relational,neo4j,28.731,25.26,54.885,18.961,10,True
+Q05,Goal-assist partnerships,B_multihop,postgres,62.948,57.727,94.919,19.157,29,True
+Q05,Goal-assist partnerships,B_multihop,neo4j,42.63,36.245,55.992,18.595,29,True
+Q06,Cards received vs Real Madrid,B_multihop,postgres,21.532,21.194,23.517,1.614,15,True
+Q06,Cards received vs Real Madrid,B_multihop,neo4j,6.788,5.633,7.759,1.498,15,True
+Q07,Players in all 8 seasons,B_multihop,postgres,1277.655,1266.756,1299.525,22.178,550,True
+Q07,Players in all 8 seasons,B_multihop,neo4j,255.533,222.054,321.338,70.933,550,True
+Q08,Teammates of Messi 2015/16,C_graph_native,postgres,6.286,4.376,10.698,4.176,20,True
+Q08,Teammates of Messi 2015/16,C_graph_native,neo4j,3.911,2.992,4.331,0.972,20,True
+Q09,2-hop teammates of Messi,C_graph_native,postgres,145.796,144.388,168.642,14.174,20,True
+Q09,2-hop teammates of Messi,C_graph_native,neo4j,93.806,82.465,120.304,26.877,20,True
+Q10,Shortest path Messi -> Pirlo,C_graph_native,postgres,621.055,607.998,632.537,19.748,1,True
+Q10,Shortest path Messi -> Pirlo,C_graph_native,neo4j,11.671,9.142,15.1,4.137,1,True
+Q11,Bulk UPDATE on event subtype,D_write,postgres,435.686,406.948,449.45,24.874,0,True
+Q11,Bulk UPDATE on event subtype,D_write,neo4j,178.011,154.291,206.606,32.95,0,True
+Q12,Schema evolution: add totalGoals,D_write,postgres,429.433,375.344,470.611,73.673,0,True
+Q12,Schema evolution: add totalGoals,D_write,neo4j,31.588,29.21,38.718,5.369,0,True

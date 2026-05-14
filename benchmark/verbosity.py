@@ -1,0 +1,138 @@
+"""
+Compute syntactic complexity of each query in two dimensions:
+
+  - LOC               : non-blank, non-comment lines.
+  - Cognitive Verbosity: count of distinct logical operators (keywords).
+
+This separates "vertical space" (LOC) from "logical concepts" (verbosity),
+two independent dimensions of code complexity. SQL queries can have few LOC
+but high cognitive load (many JOINs, subqueries, CASE/EXISTS), while Cypher
+patterns can occupy more lines but require fewer operators to express the
+same idea.
+
+Usage:
+    python3 benchmark/verbosity.py
+    python3 benchmark/verbosity.py --json
+"""
+
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+import re
+from pathlib import Path
+
+HERE         = Path(__file__).resolve().parent
+PROJECT_ROOT = HERE.parent
+SQL_DIR      = PROJECT_ROOT / "queries" / "sql"
+CYPHER_DIR   = PROJECT_ROOT / "queries" / "cypher"
+OUT_CSV      = HERE / "results" / "syntactic_complexity.csv"
+
+# Keywords that contribute to "cognitive verbosity".
+# We count *occurrences* (not just presence) because a query with three
+# different JOINs is logically more complex than one with a single JOIN.
+SQL_KEYWORDS = [
+    r"\bSELECT\b", r"\bFROM\b", r"\bWHERE\b",
+    r"\bJOIN\b", r"\bLEFT\s+JOIN\b", r"\bRIGHT\s+JOIN\b", r"\bINNER\s+JOIN\b",
+    r"\bGROUP\s+BY\b", r"\bHAVING\b", r"\bORDER\s+BY\b", r"\bLIMIT\b",
+    r"\bUNION\s+ALL\b", r"\bUNION\b", r"\bINTERSECT\b", r"\bEXCEPT\b",
+    r"\bEXISTS\b", r"\bNOT\s+EXISTS\b", r"\bIN\b", r"\bNOT\s+IN\b",
+    r"\bCASE\b", r"\bWITH\b", r"\bRECURSIVE\b",
+]
+# Cypher keywords. Note: SET/MERGE only matter for writes (Q11, Q12).
+CYPHER_KEYWORDS = [
+    r"\bMATCH\b", r"\bOPTIONAL\s+MATCH\b", r"\bWHERE\b",
+    r"\bWITH\b", r"\bRETURN\b", r"\bORDER\s+BY\b", r"\bLIMIT\b",
+    r"\bUNWIND\b", r"\bCALL\b", r"\bCASE\b",
+    r"\bSET\b", r"\bMERGE\b", r"\bCREATE\b", r"\bDELETE\b",
+    r"\bIN\b", r"\bAND\b", r"\bOR\b", r"\bNOT\b",
+]
+
+
+def loc(path: Path) -> int:
+    """Count non-empty, non-comment lines."""
+    n = 0
+    for line in path.read_text(encoding="utf-8").splitlines():
+        s = line.strip()
+        if not s:
+            continue
+        if s.startswith("--") or s.startswith("//"):
+            continue
+        n += 1
+    return n
+
+
+def strip_comments(text: str, kind: str) -> str:
+    """Remove line comments before keyword counting."""
+    out = []
+    for line in text.splitlines():
+        if kind == "sql":
+            i = line.find("--")
+        else:  # cypher
+            i = line.find("//")
+        if i >= 0:
+            line = line[:i]
+        out.append(line)
+    return "\n".join(out)
+
+
+def cognitive_verbosity(path: Path, kind: str) -> int:
+    """Count occurrences of operator keywords (case-insensitive)."""
+    text = strip_comments(path.read_text(encoding="utf-8"), kind)
+    keywords = SQL_KEYWORDS if kind == "sql" else CYPHER_KEYWORDS
+    total = 0
+    for kw in keywords:
+        total += len(re.findall(kw, text, flags=re.IGNORECASE))
+    return total
+
+
+def collect() -> list[dict]:
+    rows = []
+    sql_files    = sorted(SQL_DIR.glob("Q*.sql"))
+    cypher_files = sorted(CYPHER_DIR.glob("Q*.cypher"))
+    by_id_sql    = {f.name.split("_", 1)[0]: f for f in sql_files}
+    by_id_cypher = {f.name.split("_", 1)[0]: f for f in cypher_files}
+    qids = sorted(set(by_id_sql) | set(by_id_cypher))
+    for qid in qids:
+        ps = by_id_sql.get(qid)
+        pc = by_id_cypher.get(qid)
+        rows.append({
+            "query_id":      qid,
+            "loc_sql":       loc(ps) if ps else 0,
+            "loc_cypher":    loc(pc) if pc else 0,
+            "verbosity_sql":    cognitive_verbosity(ps, "sql")    if ps else 0,
+            "verbosity_cypher": cognitive_verbosity(pc, "cypher") if pc else 0,
+        })
+    return rows
+
+
+def main():
+    p = argparse.ArgumentParser()
+    p.add_argument("--json", action="store_true")
+    args = p.parse_args()
+
+    rows = collect()
+
+    OUT_CSV.parent.mkdir(parents=True, exist_ok=True)
+    with open(OUT_CSV, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+        w.writeheader()
+        w.writerows(rows)
+
+    if args.json:
+        print(json.dumps(rows, indent=2))
+    else:
+        # text table
+        print(f"{'ID':<4} {'LOC SQL':>8} {'LOC Cyp':>8} {'Verb SQL':>9} {'Verb Cyp':>9} {'LOC ratio':>10} {'Verb ratio':>10}")
+        for r in rows:
+            lr = r["loc_sql"] / r["loc_cypher"] if r["loc_cypher"] else 0
+            vr = r["verbosity_sql"] / r["verbosity_cypher"] if r["verbosity_cypher"] else 0
+            print(f"{r['query_id']:<4} {r['loc_sql']:>8} {r['loc_cypher']:>8} "
+                  f"{r['verbosity_sql']:>9} {r['verbosity_cypher']:>9} "
+                  f"{lr:>9.2f}x {vr:>9.2f}x")
+        print(f"\nWritten: {OUT_CSV}")
+
+
+if __name__ == "__main__":
+    main()

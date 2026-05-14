@@ -1,0 +1,21 @@
+query_id,name,category,system,median_ms,min_ms,max_ms,iqr_ms,n_rows,equal_results
+Q01,Top scorers by season,A_relational,postgres,15.63,11.105,29.67,0.0,10,True
+Q01,Top scorers by season,A_relational,neo4j,8.941,8.891,10.099,0.0,10,True
+Q02,League standings by season,A_relational,postgres,6.95,6.091,7.019,0.0,20,True
+Q02,League standings by season,A_relational,neo4j,7.898,7.811,7.988,0.0,20,True
+Q03,Goals per match by league,A_relational,postgres,4.009,3.255,4.624,0.0,11,True
+Q03,Goals per match by league,A_relational,neo4j,9.117,8.754,9.965,0.0,11,True
+Q04,Home win percentage by team,A_relational,postgres,16.97,16.592,19.727,0.0,10,True
+Q04,Home win percentage by team,A_relational,neo4j,33.513,32.577,36.098,0.0,10,True
+Q05,Goal-assist partnerships,B_multihop,postgres,64.003,62.626,81.898,0.0,29,True
+Q05,Goal-assist partnerships,B_multihop,neo4j,49.401,47.84,50.234,0.0,29,True
+Q06,Cards received vs Real Madrid,B_multihop,postgres,22.394,22.291,24.127,0.0,15,False
+Q06,Cards received vs Real Madrid,B_multihop,neo4j,9.983,9.314,16.918,0.0,15,False
+Q07,Players in all 8 seasons,B_multihop,postgres,1355.107,1302.53,1389.169,0.0,550,False
+Q07,Players in all 8 seasons,B_multihop,neo4j,194.346,193.274,285.153,0.0,539,False
+Q08,Teammates of Messi 2015/16,C_graph_native,postgres,5.735,4.566,6.287,0.0,20,True
+Q08,Teammates of Messi 2015/16,C_graph_native,neo4j,3.739,3.519,3.894,0.0,20,True
+Q09,2-hop teammates of Messi,C_graph_native,postgres,164.54,164.265,192.728,0.0,20,False
+Q09,2-hop teammates of Messi,C_graph_native,neo4j,4.126,3.971,339.943,0.0,0,False
+Q10,Shortest path Messi -> Pirlo,C_graph_native,postgres,813.097,666.802,912.056,0.0,1,False
+Q10,Shortest path Messi -> Pirlo,C_graph_native,neo4j,8.198,4.063,8.274,0.0,0,False

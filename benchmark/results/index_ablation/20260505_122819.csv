@@ -1,0 +1,7 @@
+system,phase,median_ms,min_ms,max_ms
+postgres,with_index,3.541,3.33,4.062
+postgres,without_index,11.522,9.874,16.388
+postgres,restored,1.407,1.405,1.496
+neo4j,with_index,8.078,7.034,14.292
+neo4j,without_index,18.711,14.975,23.234
+neo4j,restored,10.599,7.222,44.917

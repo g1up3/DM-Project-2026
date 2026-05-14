@@ -1,0 +1,57 @@
+# Dataset sorgente (300 MB) - troppo grande per il repo
+database/*.sqlite
+*.sqlite
+
+# CSV intermedi generati (rigenerabili da transform.py)
+clean/
+
+# Credenziali (mai committare)
+etl/.env
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+etl/.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# macOS
+.DS_Store
+
+# Visual QA artifacts (generated during slide review)
+_qa_*.jpg
+_qa_*.png
+slide-*.jpg
+slide-*.png
+
+# Slide build artifacts
+pptx_build/
+*.pdf
+!Project_Proposal_dangelica_leone.pdf
+
+# Generated CSVs (rigenerabili dalla pipeline)
+*.csv
+!benchmark/results/**/*.csv
+!queries/**/*.csv
+!data/**/*.csv
+
+# Course material (not ours)
+DM2526 Instructions on projects.pdf
+Lab_on_PostgreSql.pdf
+
+# Output di benchmark "vecchi" (tieni l'ultimo run nel repo se vuoi)
+# benchmark/results/
+
+# File di Claude Code locali
+.claude/
+
+# Archivi pesanti
+*.zip
