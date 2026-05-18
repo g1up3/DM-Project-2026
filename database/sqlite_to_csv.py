@@ -1,5 +1,15 @@
 """
-Converte tutte le tabelle del file SQLite (European Soccer Database) in CSV.
+Debug utility — dumpa tutte le tabelle del file SQLite (European Soccer
+Database) in CSV "grezzi", una corrispondenza 1:1 con lo schema sorgente.
+
+NON e' parte della pipeline ETL ufficiale (che e' in etl/transform.py,
+load_postgres.py, load_neo4j.py). Va usato solo per:
+- ispezionare manualmente il sorgente,
+- avere uno snapshot CSV del DB SQLite originale,
+- verificare l'integrita' di un dump.
+
+La pipeline ufficiale parte da etl/transform.py, che fa l'esplosione di Match
+(115 colonne) in 4 entita' separate e parsa gli XML degli eventi.
 
 Uso:
     python3 sqlite_to_csv.py

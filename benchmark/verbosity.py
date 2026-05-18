@@ -39,6 +39,8 @@ SQL_KEYWORDS = [
     r"\bUNION\s+ALL\b", r"\bUNION\b", r"\bINTERSECT\b", r"\bEXCEPT\b",
     r"\bEXISTS\b", r"\bNOT\s+EXISTS\b", r"\bIN\b", r"\bNOT\s+IN\b",
     r"\bCASE\b", r"\bWITH\b", r"\bRECURSIVE\b",
+    # Logical connectives — symmetrical with Cypher list below.
+    r"\bAND\b", r"\bOR\b", r"\bNOT\b",
 ]
 # Cypher keywords. Note: SET/MERGE only matter for writes (Q11, Q12).
 CYPHER_KEYWORDS = [

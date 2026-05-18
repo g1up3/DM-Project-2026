@@ -1,33 +1,60 @@
 # Query benchmark — SQL vs Cypher
 
-Le 10 query usate per il confronto fra PostgreSQL e Neo4j. Sono organizzate
-in tre categorie progressive di "graph-friendliness":
+Le **12 query** usate per il confronto fra PostgreSQL e Neo4j. Sono organizzate
+in quattro categorie progressive: tre di lettura (A, B, C) di "graph-friendliness"
+crescente, piu' una di scrittura (D):
 
-| # | Categoria | Nome breve | Cosa misura |
-|---|---|---|---|
-| Q01 | A — Relazionale | Top scorers by season | aggregazione semplice + join 3 tabelle |
-| Q02 | A — Relazionale | League standings by season | UNION ALL + aggregazioni su match |
-| Q03 | A — Relazionale | Goals per match per league | aggregazione + GROUP BY |
-| Q04 | A — Relazionale | Home win percentage by team | percentuali + filtri |
-| Q05 | B — Multi-hop | Goal/assist partnerships | 2 join sullo stesso evento (player1, player2) |
-| Q06 | B — Multi-hop | Cards received vs a team | join 4 tabelle con filtro su squadra avversaria |
-| Q07 | B — Multi-hop | Players in all 8 seasons | EXISTS su 8 sottoinsiemi |
-| Q08 | C — Graph-native | Teammates of X in a season | 1 hop di traversal |
-| Q09 | C — Graph-native | "Friends of friends" 2-hop | 2 hop con deduplicazione |
-| Q10 | C — Graph-native | Shortest path between two players | path search a profondità variabile |
+| #   | Categoria         | Nome breve                         | Cosa misura                                         |
+| --- | ----------------- | ---------------------------------- | --------------------------------------------------- |
+| Q01 | A — Relazionale   | Top scorers by season              | aggregazione semplice + join 3 tabelle              |
+| Q02 | A — Relazionale   | League standings by season         | UNION ALL + aggregazioni su match                   |
+| Q03 | A — Relazionale   | Goals per match per league         | aggregazione + GROUP BY                             |
+| Q04 | A — Relazionale   | Home win percentage by team        | percentuali + filtri                                |
+| Q05 | B — Multi-hop     | Goal/assist partnerships           | 2 join sullo stesso evento (player1, player2)       |
+| Q06 | B — Multi-hop     | Cards received vs a team           | join 4 tabelle con filtro su squadra avversaria     |
+| Q07 | B — Multi-hop     | Players in all 8 seasons           | DISTINCT su 8 sottoinsiemi                          |
+| Q08 | C — Graph-native  | Teammates of X in a season         | 1 hop di traversal                                  |
+| Q09 | C — Graph-native  | "Friends of friends" 2-hop         | 2 hop con deduplicazione                            |
+| Q10 | C — Graph-native  | Shortest path between two players  | path search a profondità variabile (max 6 hop)      |
+| Q11 | D — Write         | Bulk UPDATE on event subtype       | mass-update workload (~40k righe)                   |
+| Q12 | D — Write         | Schema evolution: add totalGoals   | DDL+UPDATE in SQL vs single SET in Cypher           |
 
 ## Convenzioni
 
 - I file SQL usano placeholder named-style `%(param)s` (psycopg2).
 - I file Cypher usano placeholder dollar-style `$param` (driver Neo4j).
 - I parametri sono definiti in `benchmark/queries.py` per ciascuna query.
-- Ogni query produce lo stesso result-set logico nei due sistemi (verificato
-  da `benchmark/run_benchmark.py`).
+- Ogni query Q01-Q10 produce lo stesso result-set logico nei due sistemi
+  (verificato da `benchmark/run_benchmark.py` come set di tuple normalizzate).
+- Le query write Q11/Q12 vengono eseguite e poi rolled-back: nessuna
+  modifica persistente sui DB durante il benchmark.
+
+## Note di equivalenza semantica
+
+- **Q08, Q09, Q10**: le versioni SQL usano la materialized view
+  `soccer.mv_played_for` (vedere `schema/postgres_schema.sql`), che replica
+  esattamente la relazione derivata `:PLAYED_FOR` di Neo4j. Senza di essa il
+  confronto sarebbe asimmetrico (Neo4j attraverserebbe una struttura
+  precomputata mentre Postgres la ricostruirebbe ad ogni esecuzione).
+- **Q10**: in SQL la BFS ricorsiva limita la profondita' a 6 hop player-player
+  (`WHERE b.distance < 6`). In Cypher il pattern e' `[:PLAYED_FOR*..12]`
+  perche' `PLAYED_FOR` e' direzionale e ogni hop player-player attraversa
+  2 archi (Player→Team→Player), quindi 12 archi = 6 hop player-player.
+- **Q05**: la versione Cypher include un guard `IS NOT NULL` su
+  `sourceEventId` per allinearsi al comportamento di SQL che fa self-join
+  sulla stessa riga di `match_event` (in Cypher `NULL = NULL` valuta a
+  `null`, non `true`, e senza il guard si perderebbero le coppie con
+  `sourceEventId` orfano).
+- **Q11**: in Cypher si aggiornano le relazioni `SCORED_IN`, che non
+  esistono per i goal events con `player1_id` orfano (~0.5% del totale,
+  vedere `reports/engineering_challenges.md`). Documentato come differenza
+  voluta di scope tra le due rappresentazioni.
 
 ## Struttura
 
 ```
 queries/
-    sql/      Q01_*.sql ... Q10_*.sql
-    cypher/   Q01_*.cypher ... Q10_*.cypher
+    sql/      Q01_*.sql ... Q12_*.sql
+    cypher/   Q01_*.cypher ... Q12_*.cypher
+    demo/     versioni hard-coded per la live demo (parametri inline)
 ```

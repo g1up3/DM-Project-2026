@@ -240,3 +240,33 @@ SELECT r.season,
 FROM results r
 JOIN team t ON t.team_api_id = r.team_id
 GROUP BY r.season, t.team_api_id, t.team_long_name;
+
+-- ----------------------------------------------------------------------------
+--  Materialized view: played_for (player, team, season)
+--
+--  Replica esatta della relazione derivata :PLAYED_FOR in Neo4j (calcolata
+--  in fase di load via aggregazione di LINEUP_OF — vedere load_neo4j.py:218).
+--
+--  Senza questa MV il benchmark sarebbe asimmetrico: Q08/Q09/Q10 in Cypher
+--  attraversano direttamente PLAYED_FOR (gia' materializzato), mentre in
+--  SQL dovrebbero ricostruirlo on-the-fly via CTE in ogni esecuzione.
+--  Materializzare in Postgres mette i due sistemi sullo stesso piano in
+--  termini di "cosa serve precomputare per supportare queste query".
+-- ----------------------------------------------------------------------------
+
+CREATE MATERIALIZED VIEW IF NOT EXISTS mv_played_for AS
+SELECT DISTINCT
+    l.player_api_id,
+    CASE WHEN l.side = 'home' THEN m.home_team_api_id
+                              ELSE m.away_team_api_id END AS team_api_id,
+    m.season
+FROM match_lineup l
+JOIN match m ON m.match_api_id = l.match_api_id;
+
+-- Indici per supportare i pattern di accesso piu' frequenti delle query Q08/Q09/Q10:
+--   - lookup di team/season per un giocatore noto (Q09/Q10 BFS step iniziale)
+--   - lookup di tutti i giocatori che hanno giocato in un (team, season)
+CREATE INDEX IF NOT EXISTS ix_mv_played_for_player
+    ON mv_played_for(player_api_id);
+CREATE INDEX IF NOT EXISTS ix_mv_played_for_team_season
+    ON mv_played_for(team_api_id, season);

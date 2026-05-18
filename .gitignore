@@ -55,3 +55,6 @@ Lab_on_PostgreSql.pdf
 
 # Archivi pesanti
 *.zip
+
+# Backup temporanei creati durante il review (es. revisione finale del pptx)
+*.BACKUP.pptx

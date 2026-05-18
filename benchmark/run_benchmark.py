@@ -30,6 +30,7 @@ import json
 import os
 import platform
 import statistics
+import subprocess
 import time
 from dataclasses import asdict
 from datetime import datetime
@@ -80,6 +81,59 @@ def neo4j_driver():
     )
 
 
+def collect_db_versions(pg_conn, neo_session) -> dict:
+    """Estrae versioni dei due DBMS in modo da garantirne la riproducibilita'."""
+    versions = {}
+    try:
+        with pg_conn.cursor() as cur:
+            cur.execute("SELECT version()")
+            versions["postgres_version"] = cur.fetchone()[0]
+    except Exception as e:
+        versions["postgres_version"] = f"unknown ({e})"
+    try:
+        rec = neo_session.run(
+            "CALL dbms.components() YIELD name, versions, edition "
+            "RETURN name, versions[0] AS version, edition"
+        ).single()
+        if rec:
+            versions["neo4j_version"] = f"{rec['name']} {rec['version']} ({rec['edition']})"
+    except Exception as e:
+        versions["neo4j_version"] = f"unknown ({e})"
+    return versions
+
+
+def collect_hardware_info() -> dict:
+    """Profilo hardware sintetico — utile per la riproducibilita' del benchmark."""
+    info = {
+        "host":         platform.node(),
+        "platform":     platform.platform(),
+        "machine":      platform.machine(),
+        "processor":    platform.processor() or "unknown",
+        "python":       platform.python_version(),
+        "cpu_count":    os.cpu_count(),
+    }
+    # macOS: rileva modello CPU dettagliato e RAM
+    if platform.system() == "Darwin":
+        try:
+            cpu = subprocess.check_output(
+                ["sysctl", "-n", "machdep.cpu.brand_string"],
+                stderr=subprocess.DEVNULL, timeout=2,
+            ).decode().strip()
+            if cpu:
+                info["cpu_model"] = cpu
+        except Exception:
+            pass
+        try:
+            mem_bytes = int(subprocess.check_output(
+                ["sysctl", "-n", "hw.memsize"],
+                stderr=subprocess.DEVNULL, timeout=2,
+            ).decode().strip())
+            info["memory_gb"] = round(mem_bytes / (1024 ** 3), 1)
+        except Exception:
+            pass
+    return info
+
+
 # ----------------------------------------------------------------------------
 #  Esecuzione
 # ----------------------------------------------------------------------------
@@ -119,10 +173,10 @@ def run_neo4j(session, cypher: str, params: dict, is_write: bool = False) -> tup
 def normalize_rows(rows: list[tuple]) -> set:
     """
     Normalizza i risultati per il confronto:
-    - sort delle tuple (per evitare differenze di ordinamento non rilevanti per
-      query non ORDER BY-stabile);
     - cast di Decimal/float a float arrotondato a 4 cifre per evitare
-      mismatch dovuti a precisione differente fra Postgres e Neo4j.
+      mismatch dovuti a precisione differente fra Postgres e Neo4j;
+    - cast di date/datetime a stringa ISO troncata al giorno;
+    - confronto come set di tuple (ordine irrilevante per equivalenza logica).
     """
     out = []
     for r in rows:
@@ -140,7 +194,6 @@ def normalize_rows(rows: list[tuple]) -> set:
                     norm.append(round(float(v), 4))
                 except (TypeError, ValueError):
                     norm.append(str(v))
-            r_norm = tuple(norm)
         out.append(tuple(norm))
     return set(out)
 
@@ -225,8 +278,10 @@ def main():
     timings_rows = []
     summary_rows = []
 
+    db_versions = {}
     try:
         with driver.session(database=os.getenv("NEO4J_DATABASE", "neo4j")) as neo_session:
+            db_versions = collect_db_versions(pg_conn, neo_session)
             for q in QUERIES:
                 try:
                     res = run_one_query(q, pg_conn, neo_session, args.runs)
@@ -288,10 +343,9 @@ def main():
     metadata = {
         "timestamp":  timestamp,
         "runs":       args.runs,
-        "host":       platform.node(),
-        "platform":   platform.platform(),
-        "python":     platform.python_version(),
         "n_queries":  len(QUERIES),
+        **collect_hardware_info(),
+        **db_versions,
     }
     (out_dir / "run_metadata.json").write_text(
         json.dumps(metadata, indent=2), encoding="utf-8"

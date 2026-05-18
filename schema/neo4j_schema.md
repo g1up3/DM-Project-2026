@@ -130,6 +130,24 @@ ORDER BY assists DESC
 LIMIT 10;
 ```
 
+## Cosa NON viene caricato in Neo4j (scelta di scope)
+
+Lo schema dichiara i nodi `PlayerStats` e `TeamStats` per completezza
+concettuale, ma il loader `etl/load_neo4j.py` **non li importa**:
+
+- nessuna delle 12 query del benchmark li interroga (le query si concentrano
+  su matches, lineup, eventi e relazioni player-team),
+- l'import aumenterebbe il tempo di caricamento di Neo4j di alcuni minuti
+  (~184k nodi `PlayerStats` con ~40 attributi ciascuno + 1.5k `TeamStats`)
+  senza alcun beneficio sperimentale,
+- Postgres li carica per coerenza con lo schema SQL completo, ma il dato resta
+  inutilizzato in entrambi i sistemi durante il benchmark.
+
+In una versione production-ready dello schema, lo stesso loader li
+caricherebbe come nodi `:PlayerStats {playerApiId, date, ...attributi}` con
+relazione `:STATS_OF` verso il `:Player` corrispondente. Lo schema concettuale
+in questo file riflette gia' quel design "completo".
+
 ## Note operative per il caricamento
 
 - Caricare prima i nodi anagrafici (`Country`, `League`, `Team`, `Player`).

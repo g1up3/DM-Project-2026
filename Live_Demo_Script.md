@@ -43,9 +43,9 @@ Switch to the psql terminal and run:
 \i queries/demo/Q10_shortest_path.sql
 ```
 
-Expected: ~600 ms, single result row showing the hop count.
+Expected: ~620 ms, single result row showing the hop count.
 
-> "About 600 milliseconds, two hops between them."
+> "About six hundred milliseconds, two hops between them."
 
 ### 1B — Show the Neo4j version (30 s)
 
@@ -56,7 +56,7 @@ Switch to **Neo4j Browser**. Paste:
 :param player_b => 'Andrea Pirlo';
 
 MATCH (a:Player {name: $player_a}), (b:Player {name: $player_b})
-MATCH path = shortestPath((a)-[:PLAYED_FOR*..6]-(b))
+MATCH path = shortestPath((a)-[:PLAYED_FOR*..12]-(b))
 RETURN length(path) / 2 AS hops;
 ```
 
@@ -67,8 +67,8 @@ Run.
 Point at the *Started streaming N records after X ms* line at the bottom of
 the result panel.
 
-> "**Eight milliseconds.** Same data, same question, same answer.
->  Seventy-one times faster, **three lines** of code instead of thirty,
+> "**Twelve milliseconds.** Same data, same question, same answer.
+>  **Fifty-three times faster**, **three lines** of code instead of thirty,
 >  **three operators** instead of twenty-eight."
 
 ### 1C — Visualise the actual path (30 s)
@@ -77,7 +77,7 @@ To make it visual, run:
 
 ```cypher
 MATCH (a:Player {name: 'Lionel Messi'}), (b:Player {name: 'Andrea Pirlo'})
-MATCH path = shortestPath((a)-[:PLAYED_FOR*..6]-(b))
+MATCH path = shortestPath((a)-[:PLAYED_FOR*..12]-(b))
 RETURN path;
 ```
 
@@ -101,15 +101,15 @@ Switch to psql:
 \i queries/demo/Q02_league_standings.sql
 ```
 
-Expected: ~2 ms.
+Expected: ~5-6 ms.
 
-> "Two milliseconds. Twenty teams of Serie A 2015/16 with full standings —
+> "About five milliseconds. Twenty teams of Serie A 2015/16 with full standings —
 >  points, goals for, goals against."
 
 Switch to Neo4j Browser and run the equivalent Cypher (paste from
 `queries/cypher/Q02_league_standings.cypher`).
 
-> "About ten. Six times slower on Neo4j."
+> "Around seven. Postgres wins again — classical OLAP territory."
 
 > "This is the lesson: classical OLAP-style aggregations are exactly what
 >  PostgreSQL has been optimised to do for thirty years. The graph paradigm
@@ -186,7 +186,8 @@ DROP INDEX soccer.ix_lineup_player;
 CREATE INDEX ix_lineup_player ON soccer.match_lineup(player_api_id);
 ```
 
-> "The 3.3 ms we saw on Q08 isn't free. Drop one index and watch what happens."
+> "The few milliseconds we saw on Q08 aren't free. Drop one index and Postgres goes
+>  from 3.5 ms to 11.5 ms — a 3.2x slowdown. The whole engineering story is in those numbers."
 
 Use this only if the audience seems engaged on engineering details.
 

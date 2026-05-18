@@ -7,6 +7,12 @@ Tutor: Roberto Maria Delfino.
 - Giuseppe D'Angelica — [github.com/g1up3](https://github.com/g1up3)
 - Nicolas Leone — [github.com/theunick](https://github.com/theunick)
 
+## Repository
+
+- Repository GitHub del progetto: [github.com/g1up3/DM-Project-2026](https://github.com/g1up3/DM-Project-2026)
+- Branch principale: `main`
+- Per collaborare in modo ordinato, lavora su branch separati e usa pull request prima di unire le modifiche in `main`.
+
 ## Sintesi
 
 Confronto fra un DBMS relazionale (**PostgreSQL**) e un graph database
@@ -23,11 +29,18 @@ L'analisi misura, su **12 query parametrizzate** equivalenti nelle due tecnologi
 più una verifica automatica di **correttezza** (i risultati coincidono nei due sistemi)
 e un **index ablation benchmark** che misura il costo di rimuovere un indice critico.
 
-I risultati confermano l'aspettativa teorica: PostgreSQL vince sulle query
-relazionali "OLAP-like" (aggregazioni semplici), Neo4j vince nettamente sulle
-query di tipo *graph traversal*. Il caso più drammatico è la query di
-shortest-path tra due giocatori (Messi → Pirlo): **8 ms su Neo4j contro 601 ms
-su Postgres**, con il codice Cypher che è 10 volte più corto del CTE ricorsivo.
+Per garantire un confronto **fair** sulle query graph-native (Q08, Q09, Q10),
+Postgres precomputa una materialized view `mv_played_for(player, team, season)`
+equivalente alla relazione derivata `:PLAYED_FOR` di Neo4j (vedere
+`schema/postgres_schema.sql`). Senza questo accorgimento, Neo4j avrebbe un
+vantaggio strutturale dovuto al modello di carico.
+
+I risultati confermano l'aspettativa teorica: **Postgres vince sulle query
+relazionali "OLAP-like"** (aggregazioni semplici, join 2-3 tabelle), **Neo4j
+vince nettamente sulle query di tipo graph traversal** (multi-hop e shortest
+path). Il caso più drammatico è la query di shortest-path tra due giocatori
+(Messi → Pirlo): **12 ms su Neo4j contro 621 ms su Postgres** (53x), con il
+codice Cypher 10 volte più corto del CTE ricorsivo SQL.
 
 ## Struttura del repository
 
@@ -35,31 +48,35 @@ su Postgres**, con il codice Cypher che è 10 volte più corto del CTE ricorsivo
 .
 ├── schema/                       # Schemi: concettuale ER + DDL Postgres + Cypher Neo4j
 │   ├── conceptual_er.md
-│   ├── postgres_schema.sql
-│   └── neo4j_schema.md
+│   ├── postgres_schema.sql       #  DDL + mv_played_for + viste analitiche
+│   ├── neo4j_schema.md
+│   ├── schema_ER_mermaidpng.png  #  diagramma ER renderizzato
+│   ├── schema_ER_dbdiagram.pdf
+│   └── visualisation.png         #  visualizzazione del grafo Neo4j
 ├── etl/                          # Pipeline di estrazione/trasformazione/caricamento
 │   ├── transform.py              #  parsing XML, esplosione di Match
-│   ├── load_postgres.py          #  applica DDL + COPY dei CSV puliti
+│   ├── load_postgres.py          #  applica DDL + COPY dei CSV + REFRESH MV
 │   ├── load_neo4j.py             #  vincoli + LOAD CSV + relazione derivata PLAYED_FOR
 │   ├── explore_dataset.py        #  produce reports/dataset_exploration.md
 │   ├── README.md                 #  istruzioni operative ETL
 │   └── requirements.txt
 ├── queries/                      # 12 query equivalenti in SQL e Cypher
-│   ├── sql/Q01..Q12.sql           #  Q01-Q10 read, Q11-Q12 write
+│   ├── sql/Q01..Q12.sql          #  Q01-Q10 read, Q11-Q12 write
 │   ├── cypher/Q01..Q12.cypher
 │   └── README.md
 ├── benchmark/                    # Harness di misura e report
 │   ├── queries.py                #  definizione delle 12 query con parametri
 │   ├── run_benchmark.py          #  warm-up + N run + verifica risultati (read+write)
-│   ├── verbosity.py              #  calcolo LOC + cognitive verbosity
+│   ├── verbosity.py              #  calcolo LOC + cognitive verbosity (simmetrico)
 │   ├── index_ablation.py         #  drop/restore di un indice + ri-esecuzione
 │   ├── generate_report.py        #  Markdown + 5 grafici PNG
 │   ├── results/run_<ts>/         #  CSV di output per ciascuna run
+│   ├── results/index_ablation/   #  output di index_ablation.py
 │   └── README.md
 ├── reports/                      # Output finali
 │   ├── dataset_exploration.md
 │   ├── engineering_challenges.md #  storia delle 3 sfide ingegneristiche risolte
-│   ├── benchmark_report.md
+│   ├── benchmark_report.md       #  report con setup, risultati, limitations, bibliografia
 │   └── figures/*.png             #  loc, verbosity, perf_by_query, speedup, qr_github
 ├── Presentation_DM_DAngelica_Leone.pptx   # Slide deck (20 slide)
 ├── Live_Demo_Script.md           # Sceneggiatura della demo live (~5 min)
@@ -69,23 +86,35 @@ su Postgres**, con il codice Cypher che è 10 volte più corto del CTE ricorsivo
 
 ## Risultati di sintesi
 
-| ID | Query | Categoria | Postgres | Neo4j | Vincitore | Speedup |
-|---|---|---|---:|---:|---|---:|
-| Q01 | Top scorers by season | A — Relational | 14.5 ms | 6.6 ms | Neo4j | 2.19x |
-| Q02 | League standings by season | A — Relational | 1.7 ms | 10.2 ms | **Postgres** | 6.14x |
-| Q03 | Goals per match by league | A — Relational | 3.2 ms | 8.1 ms | **Postgres** | 2.54x |
-| Q04 | Home win % by team | A — Relational | 18.1 ms | 18.5 ms | Pari | 1.02x |
-| Q05 | Goal-assist partnerships | B — Multi-hop | 64.0 ms | 47.7 ms | Neo4j | 1.34x |
-| Q06 | Cards vs Real Madrid | B — Multi-hop | 22.6 ms | 7.5 ms | Neo4j | 2.99x |
-| Q07 | Players in all 8 seasons | B — Multi-hop | 1313.4 ms | 195.9 ms | Neo4j | 6.70x |
-| Q08 | Teammates of Messi 2015/16 | C — Graph-native | 3.3 ms | 3.0 ms | Pari | 1.09x |
-| Q09 | 2-hop teammates of Messi | C — Graph-native | 145.9 ms | 91.8 ms | Neo4j | 1.59x |
-| Q10 | Shortest path Messi → Pirlo | C — Graph-native | 601.5 ms | 8.5 ms | **Neo4j** | **71.10x** |
+Run di riferimento: `run_20260505_114833` (MacBook Air M-series).
 
-Tutte e 10 le query restituiscono risultati semanticamente equivalenti nei
-due sistemi (verificato automaticamente).
+| ID  | Query                                | Categoria         | Postgres (ms) | Neo4j (ms) | Vincitore   | Speedup |
+| --- | ------------------------------------ | ----------------- | ------------: | ---------: | ----------- | ------: |
+| Q01 | Top scorers by season                | A — Relational    |          11.7 |       12.1 | **Postgres**|   1.03x |
+| Q02 | League standings by season           | A — Relational    |           5.5 |        7.3 | **Postgres**|   1.33x |
+| Q03 | Goals per match by league            | A — Relational    |           4.4 |        8.1 | **Postgres**|   1.84x |
+| Q04 | Home win % by team                   | A — Relational    |          16.3 |       28.7 | **Postgres**|   1.76x |
+| Q05 | Goal-assist partnerships             | B — Multi-hop     |          62.9 |       42.6 | **Neo4j**   |   1.48x |
+| Q06 | Cards vs Real Madrid                 | B — Multi-hop     |          21.5 |        6.8 | **Neo4j**   |   3.17x |
+| Q07 | Players in all 8 seasons             | B — Multi-hop     |        1277.7 |      255.5 | **Neo4j**   |   5.00x |
+| Q08 | Teammates of Messi 2015/16           | C — Graph-native  |           6.3 |        3.9 | **Neo4j**   |   1.61x |
+| Q09 | 2-hop teammates of Messi             | C — Graph-native  |         145.8 |       93.8 | **Neo4j**   |   1.55x |
+| Q10 | Shortest path Messi → Pirlo          | C — Graph-native  |         621.1 |       11.7 | **Neo4j**   | **53.21x** |
+| Q11 | Bulk UPDATE on event subtype         | D — Write         |         435.7 |      178.0 | **Neo4j**   |   2.45x |
+| Q12 | Schema evolution: add totalGoals     | D — Write         |         429.4 |       31.6 | **Neo4j**   |  13.59x |
 
-Vedi `reports/benchmark_report.md` per il report completo con grafici.
+Tutte e 10 le query read (Q01-Q10) restituiscono risultati semanticamente
+equivalenti nei due sistemi (verificato automaticamente come set di tuple
+normalizzate). Vedere `reports/benchmark_report.md` per il report completo
+con setup hardware, grafici, limitations e bibliografia.
+
+**Nota**: le query SQL Q08/Q09/Q10 sono state aggiornate per usare la
+materialized view `mv_played_for` invece di ricostruire la relazione via CTE
+ad ogni esecuzione. Le query Cypher Q05 e Q10 sono state allineate
+semanticamente alle controparti SQL (gestione NULL `sourceEventId` per Q05;
+range di hop equivalente a 6 player-hop per Q10). Dopo queste modifiche al
+codice **il benchmark va rieseguito** per ottenere numeri aggiornati: i
+valori riportati sopra corrispondono alla run precedente le modifiche.
 
 ## Come riprodurre
 
@@ -103,8 +132,8 @@ file `database.sqlite` da Kaggle (https://www.kaggle.com/datasets/hugomathien/so
 4. Pipeline:
    ```bash
    python3 etl/transform.py        # estrae + parsa XML + produce CSV
-   python3 etl/load_postgres.py    # carica Postgres
-   python3 etl/load_neo4j.py       # carica Neo4j
+   python3 etl/load_postgres.py    # carica Postgres + REFRESH mv_played_for
+   python3 etl/load_neo4j.py       # carica Neo4j + deriva PLAYED_FOR
    ```
 5. Benchmark:
    ```bash
@@ -118,10 +147,12 @@ file `database.sqlite` da Kaggle (https://www.kaggle.com/datasets/hugomathien/so
 
 Le scelte di modellazione e i trade-off sono documentati in:
 - `schema/conceptual_er.md` — modello concettuale e ipotesi.
-- `schema/postgres_schema.sql` — DDL con vincoli e indici, viste analitiche.
+- `schema/postgres_schema.sql` — DDL con vincoli, indici, viste analitiche e
+  materialized view `mv_played_for` per il confronto fair su query graph-native.
 - `schema/neo4j_schema.md` — modello a grafo, vincoli e indici Cypher.
 - `reports/dataset_exploration.md` — analisi preliminare del sorgente
   (qualità, NULL, struttura XML degli eventi, integrità referenziale).
+- `reports/engineering_challenges.md` — tre sfide reali risolte durante l'ETL.
 
 In particolare, la struttura *wide* della tabella `Match` (115 colonne) del
 sorgente SQLite è stata esplosa in 4 entità separate: `match` (anagrafica

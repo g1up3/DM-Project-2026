@@ -111,6 +111,21 @@ def copy_csv(conn, table: str, csv_path: Path, columns: list[str] | None,
     return n
 
 
+def refresh_materialized_views(conn) -> None:
+    """
+    La MV soccer.mv_played_for e' creata dal DDL ma resta vuota finche' le
+    tabelle sorgente non sono popolate. Va materializzata DOPO il load di
+    match + match_lineup.
+    """
+    print("\n[2.5/3] Refresh materialized views")
+    with conn.cursor() as cur:
+        cur.execute("REFRESH MATERIALIZED VIEW soccer.mv_played_for")
+        cur.execute("SELECT COUNT(*) FROM soccer.mv_played_for")
+        n = cur.fetchone()[0]
+        print(f"  [ok]   mv_played_for refreshed. Rows: {n:,}")
+    conn.commit()
+
+
 def smoke_test(conn) -> None:
     print("\n[3/3] Smoke test:")
     queries = [
@@ -154,6 +169,7 @@ def main() -> None:
             n = copy_csv(conn, table, path, cols, skip_conflicts)
             print(f"  [ok]   {table:<14} caricato. Righe in tabella: {n:,}")
 
+        refresh_materialized_views(conn)
         smoke_test(conn)
     finally:
         conn.close()

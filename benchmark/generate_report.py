@@ -61,6 +61,8 @@ _SQL_KEYWORDS = [
     r"\bGROUP\s+BY\b", r"\bHAVING\b", r"\bORDER\s+BY\b", r"\bLIMIT\b",
     r"\bUNION\s+ALL\b", r"\bUNION\b", r"\bEXISTS\b", r"\bIN\b",
     r"\bCASE\b", r"\bWITH\b", r"\bRECURSIVE\b",
+    # Logical connectives — symmetrical with Cypher list below.
+    r"\bAND\b", r"\bOR\b", r"\bNOT\b",
 ]
 _CYPHER_KEYWORDS = [
     r"\bMATCH\b", r"\bOPTIONAL\s+MATCH\b", r"\bWHERE\b",
@@ -227,10 +229,23 @@ def main():
     metadata_path = run_dir / "run_metadata.json"
     if metadata_path.exists():
         meta = json.loads(metadata_path.read_text())
-        md.append(f"Host: `{meta.get('host')}`  ·  "
-                  f"Platform: `{meta.get('platform')}`  ·  "
-                  f"Python: `{meta.get('python')}`  ·  "
-                  f"Esecuzioni misurate per query: {meta.get('runs')}\n")
+        md.append("\n## Experimental setup\n")
+        md.append("| Item | Value |")
+        md.append("|---|---|")
+        md.append(f"| Host | `{meta.get('host', '?')}` |")
+        md.append(f"| Platform | `{meta.get('platform', '?')}` |")
+        if meta.get("cpu_model"):
+            md.append(f"| CPU | `{meta.get('cpu_model')}` ({meta.get('cpu_count', '?')} cores) |")
+        else:
+            md.append(f"| CPU | `{meta.get('processor', '?')}` ({meta.get('cpu_count', '?')} cores) |")
+        if meta.get("memory_gb"):
+            md.append(f"| Memory | {meta.get('memory_gb')} GB |")
+        md.append(f"| Python | `{meta.get('python', '?')}` |")
+        md.append(f"| PostgreSQL | `{meta.get('postgres_version', 'unknown')}` |")
+        md.append(f"| Neo4j | `{meta.get('neo4j_version', 'unknown')}` |")
+        md.append(f"| Misure per query | {meta.get('runs', '?')} run + 1 warm-up scartato |")
+        md.append(f"| Numero query | {meta.get('n_queries', '?')} |")
+        md.append("")
 
     md.append("\n## Sintesi\n")
     md.append("| ID | Query | Categoria | Postgres (ms) | Neo4j (ms) | Vincitore | Speedup | Risultati |")
@@ -285,6 +300,36 @@ def main():
     md.append("- I risultati nei due sistemi sono confrontati come *insiemi* di tuple, "
               "con normalizzazione di tipi (Decimal, date) e arrotondamento a 4 decimali "
               "per evitare falsi positivi dovuti a differenze di precisione.\n")
+    md.append("- Per garantire un confronto **fair** su Q08/Q09/Q10, Postgres precomputa la "
+              "materialized view `mv_played_for(player, team, season)` (vedere "
+              "`schema/postgres_schema.sql`), che corrisponde esattamente alla relazione "
+              "derivata `:PLAYED_FOR` di Neo4j.\n")
+    md.append("- I conteggi di **cognitive verbosity** usano un insieme simmetrico di "
+              "operatori logici (`AND`, `OR`, `NOT` inclusi sia per SQL sia per Cypher).\n")
+
+    md.append("\n## Limitations\n")
+    md.append("Il benchmark misura performance **single-node, single-user, in-memory** su "
+              "un dataset di dimensione media (917k eventi, 542k lineup rows, 26k match). "
+              "Restano fuori dallo scope di questo lavoro:\n")
+    md.append("- carico **concorrente** (write contention, lock, MVCC vs lock-free traversal);\n")
+    md.append("- carico **OLTP intensivo** (insert rate, transazioni distribuite);\n")
+    md.append("- scaling **orizzontale** (sharding Postgres con Citus vs Neo4j Fabric);\n")
+    md.append("- benchmark **standardizzati** su dataset grafo (LDBC SNB, vedere bibliografia);\n")
+    md.append("- tuning dei sistemi: entrambi usano configurazione di default; il delta "
+              "potrebbe ridursi (o ampliarsi) con tuning specifico (shared_buffers per "
+              "Postgres, pagecache size per Neo4j).\n")
+
+    md.append("\n## Riferimenti\n")
+    md.append("- Angles, R., Gutierrez, C. (2008). *Survey of Graph Database Models*. "
+              "ACM Computing Surveys, 40(1).\n")
+    md.append("- Vicknair, C. et al. (2010). *A Comparison of a Graph Database and a "
+              "Relational Database*. ACM SE 2010.\n")
+    md.append("- Holzschuher, F., Peinl, R. (2013). *Performance of Graph Query Languages: "
+              "Comparison of Cypher, Gremlin and Native Access in Neo4j*. EDBT/ICDT Workshops.\n")
+    md.append("- Erling, O. et al. (2015). *The LDBC Social Network Benchmark: "
+              "Interactive Workload*. SIGMOD 2015.\n")
+    md.append("- Robinson, I., Webber, J., Eifrem, E. (2015). *Graph Databases* (2nd ed.). "
+              "O'Reilly Media.\n")
 
     out = REPORT_DIR / "benchmark_report.md"
     out.write_text("\n".join(md), encoding="utf-8")
