@@ -36,11 +36,12 @@ equivalente alla relazione derivata `:PLAYED_FOR` di Neo4j (vedere
 vantaggio strutturale dovuto al modello di carico.
 
 I risultati confermano l'aspettativa teorica: **Postgres vince sulle query
-relazionali "OLAP-like"** (aggregazioni semplici, join 2-3 tabelle), **Neo4j
-vince nettamente sulle query di tipo graph traversal** (multi-hop e shortest
-path). Il caso più drammatico è la query di shortest-path tra due giocatori
-(Messi → Pirlo): **12 ms su Neo4j contro 621 ms su Postgres** (53x), con il
-codice Cypher 10 volte più corto del CTE ricorsivo SQL.
+relazionali "OLAP-like"** (aggregazioni semplici, join 2-3 tabelle, e — grazie
+alla materialized view — anche la query 2-hop Q09), **Neo4j vince nettamente
+sulle query di tipo graph traversal a profondita' variabile** (Q07 multi-hop
+e Q10 shortest path). Il caso più drammatico è la query di shortest-path tra
+due giocatori (Messi → Pirlo): **10 ms su Neo4j contro 750 ms su Postgres**
+(**76x**), con il codice Cypher 7 volte più corto del CTE ricorsivo SQL.
 
 ## Struttura del repository
 
@@ -86,35 +87,40 @@ codice Cypher 10 volte più corto del CTE ricorsivo SQL.
 
 ## Risultati di sintesi
 
-Run di riferimento: `run_20260505_114833` (MacBook Air M-series).
+Run di riferimento: `run_20260518_194104` (MacBook Air M2, 8 GB, PostgreSQL 18.3, Neo4j 2026.04.0).
 
 | ID  | Query                                | Categoria         | Postgres (ms) | Neo4j (ms) | Vincitore   | Speedup |
 | --- | ------------------------------------ | ----------------- | ------------: | ---------: | ----------- | ------: |
-| Q01 | Top scorers by season                | A — Relational    |          11.7 |       12.1 | **Postgres**|   1.03x |
-| Q02 | League standings by season           | A — Relational    |           5.5 |        7.3 | **Postgres**|   1.33x |
-| Q03 | Goals per match by league            | A — Relational    |           4.4 |        8.1 | **Postgres**|   1.84x |
-| Q04 | Home win % by team                   | A — Relational    |          16.3 |       28.7 | **Postgres**|   1.76x |
-| Q05 | Goal-assist partnerships             | B — Multi-hop     |          62.9 |       42.6 | **Neo4j**   |   1.48x |
-| Q06 | Cards vs Real Madrid                 | B — Multi-hop     |          21.5 |        6.8 | **Neo4j**   |   3.17x |
-| Q07 | Players in all 8 seasons             | B — Multi-hop     |        1277.7 |      255.5 | **Neo4j**   |   5.00x |
-| Q08 | Teammates of Messi 2015/16           | C — Graph-native  |           6.3 |        3.9 | **Neo4j**   |   1.61x |
-| Q09 | 2-hop teammates of Messi             | C — Graph-native  |         145.8 |       93.8 | **Neo4j**   |   1.55x |
-| Q10 | Shortest path Messi → Pirlo          | C — Graph-native  |         621.1 |       11.7 | **Neo4j**   | **53.21x** |
-| Q11 | Bulk UPDATE on event subtype         | D — Write         |         435.7 |      178.0 | **Neo4j**   |   2.45x |
-| Q12 | Schema evolution: add totalGoals     | D — Write         |         429.4 |       31.6 | **Neo4j**   |  13.59x |
+| Q01 | Top scorers by season                | A — Relational    |          15.6 |        9.1 | **Neo4j**   |   1.71x |
+| Q02 | League standings by season           | A — Relational    |           3.8 |        5.7 | **Postgres**|   1.52x |
+| Q03 | Goals per match by league            | A — Relational    |           3.9 |        5.6 | **Postgres**|   1.45x |
+| Q04 | Home win % by team                   | A — Relational    |          16.8 |       24.5 | **Postgres**|   1.46x |
+| Q05 | Goal-assist partnerships             | B — Multi-hop     |          27.6 |       52.3 | **Postgres**|   1.89x |
+| Q06 | Cards vs Real Madrid                 | B — Multi-hop     |          24.4 |        8.8 | **Neo4j**   |   2.78x |
+| Q07 | Players in all 8 seasons             | B — Multi-hop     |        1283.5 |      201.0 | **Neo4j**   |   6.39x |
+| Q08 | Teammates of Messi 2015/16           | C — Graph-native  |           5.6 |        3.5 | **Neo4j**   |   1.61x |
+| Q09 | 2-hop teammates of Messi             | C — Graph-native  |          36.3 |       66.9 | **Postgres**|   1.84x |
+| Q10 | Shortest path Messi → Pirlo          | C — Graph-native  |         749.6 |        9.9 | **Neo4j**   | **75.91x** |
+| Q11 | Bulk UPDATE on event subtype         | D — Write         |         363.9 |      155.2 | **Neo4j**   |   2.34x |
+| Q12 | Schema evolution: add totalGoals     | D — Write         |         390.8 |       33.2 | **Neo4j**   |  11.77x |
 
 Tutte e 10 le query read (Q01-Q10) restituiscono risultati semanticamente
 equivalenti nei due sistemi (verificato automaticamente come set di tuple
 normalizzate). Vedere `reports/benchmark_report.md` per il report completo
-con setup hardware, grafici, limitations e bibliografia.
+con setup hardware, grafici, conclusioni, limitations e bibliografia.
 
-**Nota**: le query SQL Q08/Q09/Q10 sono state aggiornate per usare la
-materialized view `mv_played_for` invece di ricostruire la relazione via CTE
-ad ogni esecuzione. Le query Cypher Q05 e Q10 sono state allineate
-semanticamente alle controparti SQL (gestione NULL `sourceEventId` per Q05;
-range di hop equivalente a 6 player-hop per Q10). Dopo queste modifiche al
-codice **il benchmark va rieseguito** per ottenere numeri aggiornati: i
-valori riportati sopra corrispondono alla run precedente le modifiche.
+**Osservazioni dalla run aggiornata** (post audit fixes):
+- **Q09**: con la materialized view `mv_played_for`, Postgres ora vince
+  (1.84x) — il vantaggio Neo4j sparisce quando entrambi i sistemi
+  attraversano una struttura precomputata equivalente. Conferma che il
+  vantaggio Neo4j si concentra dove ha senso teoricamente: **profondita'
+  variabile**, non iterazione su join precomputati.
+- **Q10**: il fix del range hop (`*..12` per equivalenza semantica con SQL)
+  ha migliorato il differenziale: ora **75.9x** (era 53x). Il caso piu'
+  iconico dell'esperimento.
+- **Q01, Q05**: vincitori invertiti rispetto alla run precedente, ma con
+  IQR alto su entrambi: sono casi al limite del rumore di misurazione
+  (delta < 2x su query da ~10-30ms).
 
 ## Come riprodurre
 

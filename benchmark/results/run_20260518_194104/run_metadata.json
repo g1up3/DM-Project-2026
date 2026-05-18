@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260518_194104",
+  "runs": 5,
+  "n_queries": 12,
+  "host": "192.168.1.52",
+  "platform": "macOS-26.5-arm64-arm-64bit",
+  "machine": "arm64",
+  "processor": "arm",
+  "python": "3.12.3",
+  "cpu_count": 8,
+  "cpu_model": "Apple M2",
+  "memory_gb": 8.0,
+  "postgres_version": "PostgreSQL 18.3 (Homebrew) on aarch64-apple-darwin25.2.0, compiled by Apple clang version 17.0.0 (clang-1700.6.3.2), 64-bit",
+  "neo4j_version": "Neo4j Kernel 2026.04.0 (enterprise)"
+}
