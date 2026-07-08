@@ -1,0 +1,39 @@
+Sort  (cost=261.52..261.57 rows=18 width=45) (actual time=6.318..6.325 rows=20.00 loops=1)
+  Sort Key: (sum((CASE WHEN (m.home_team_goal > m.away_team_goal) THEN 3 WHEN (m.home_team_goal = m.away_team_goal) THEN 1 ELSE 0 END))) DESC, ((sum(m.home_team_goal) - sum(m.away_team_goal))) DESC, t.team_long_name
+  Sort Method: quicksort  Memory: 26kB
+  Buffers: shared hit=1584
+  ->  GroupAggregate  (cost=260.70..261.15 rows=18 width=45) (actual time=5.904..6.306 rows=20.00 loops=1)
+        Group Key: t.team_long_name
+        Buffers: shared hit=1584
+        ->  Sort  (cost=260.70..260.74 rows=18 width=21) (actual time=5.872..5.975 rows=760.00 loops=1)
+              Sort Key: t.team_long_name
+              Sort Method: quicksort  Memory: 51kB
+              Buffers: shared hit=1584
+              ->  Nested Loop  (cost=0.58..260.32 rows=18 width=21) (actual time=0.507..4.258 rows=760.00 loops=1)
+                    Buffers: shared hit=1584
+                    ->  Nested Loop  (cost=0.43..257.30 rows=18 width=12) (actual time=0.503..2.374 rows=760.00 loops=1)
+                          Buffers: shared hit=64
+                          ->  Index Scan using league_name_key on league l  (cost=0.15..8.17 rows=1 width=4) (actual time=0.011..0.012 rows=1.00 loops=1)
+                                Index Cond: ((name)::text = 'Italy Serie A'::text)
+                                Index Searches: 1
+                                Buffers: shared hit=2
+                          ->  Append  (cost=0.29..243.09 rows=604 width=16) (actual time=0.490..2.164 rows=760.00 loops=1)
+                                Buffers: shared hit=62
+                                ->  Index Scan using ix_match_league on match m  (cost=0.29..120.04 rows=302 width=16) (actual time=0.489..0.746 rows=380.00 loops=1)
+                                      Index Cond: (league_id = l.league_id)
+                                      Filter: ((season)::text = '2015/2016'::text)
+                                      Rows Removed by Filter: 2637
+                                      Index Searches: 1
+                                      Buffers: shared hit=31
+                                ->  Index Scan using ix_match_league on match m_1  (cost=0.29..120.04 rows=302 width=16) (actual time=0.975..1.273 rows=380.00 loops=1)
+                                      Index Cond: (league_id = l.league_id)
+                                      Filter: ((season)::text = '2015/2016'::text)
+                                      Rows Removed by Filter: 2637
+                                      Index Searches: 1
+                                      Buffers: shared hit=31
+                    ->  Index Scan using team_pkey on team t  (cost=0.15..0.17 rows=1 width=17) (actual time=0.002..0.002 rows=1.00 loops=760)
+                          Index Cond: (team_api_id = m.home_team_api_id)
+                          Index Searches: 760
+                          Buffers: shared hit=1520
+Planning Time: 0.861 ms
+Execution Time: 6.372 ms

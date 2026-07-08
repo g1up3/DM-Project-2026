@@ -1,0 +1,29 @@
+{
+  "timestamp": "20260708_112906",
+  "query_id": "Q07",
+  "system": "postgres",
+  "runs": 15,
+  "note": "work_mem impostato con SET a livello di sessione; il resto della configurazione e' identico alla run di riferimento.",
+  "configs": [
+    {
+      "work_mem": "4MB",
+      "median_ms": 1211.105,
+      "min_ms": 1202.942,
+      "max_ms": 1259.686,
+      "iqr_ms": 25.569,
+      "ci95_lo": 1206.464,
+      "ci95_hi": 1231.834,
+      "sort_method": "external merge  Disk: 18392kB"
+    },
+    {
+      "work_mem": "64MB",
+      "median_ms": 1209.357,
+      "min_ms": 1208.265,
+      "max_ms": 1222.289,
+      "iqr_ms": 3.662,
+      "ci95_lo": 1208.722,
+      "ci95_hi": 1211.715,
+      "sort_method": "quicksort  Memory: 46429kB"
+    }
+  ]
+}

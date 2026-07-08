@@ -1,0 +1,8 @@
++-- ProduceResults@neo4j  (rows: 1, dbHits: 0)
+    identifiers: ['path', 'a', 'shortest_path_hops', 'anon_0', 'b']
+  +-- Projection@neo4j  (rows: 1, dbHits: 0)
+      identifiers: ['path', 'a', 'shortest_path_hops', 'anon_0', 'b']
+    +-- ShortestPath@neo4j  (rows: 1, dbHits: 237)
+        identifiers: ['a', 'b', 'path', 'anon_0']
+      +-- MultiNodeIndexSeek@neo4j  (rows: 0, dbHits: 0)
+          identifiers: ['a', 'b']

@@ -1,0 +1,49 @@
+{
+  "timestamp": "20260524_230158",
+  "runs_per_phase": 10,
+  "n_targets": 7,
+  "targets": [
+    {
+      "system": "postgres",
+      "index": "ix_lineup_player",
+      "query": "Q08",
+      "rationale": "Q08 joins match_lineup on player_api_id to find teammates"
+    },
+    {
+      "system": "postgres",
+      "index": "ix_mv_played_for_player",
+      "query": "Q09",
+      "rationale": "Q09 starts BFS from player_api_id in the materialized view"
+    },
+    {
+      "system": "postgres",
+      "index": "ix_mv_played_for_player",
+      "query": "Q10",
+      "rationale": "Q10 recursive CTE pivots on player_api_id in each BFS step"
+    },
+    {
+      "system": "postgres",
+      "index": "ix_event_player1",
+      "query": "Q05",
+      "rationale": "Q05 joins match_event on player1_id for goal-assist pairs"
+    },
+    {
+      "system": "neo4j",
+      "index": "player_name_idx",
+      "query": "Q08",
+      "rationale": "Q08 starts with Player lookup by name"
+    },
+    {
+      "system": "neo4j",
+      "index": "match_season_idx",
+      "query": "Q03",
+      "rationale": "Q03 filters Match nodes by season"
+    },
+    {
+      "system": "neo4j",
+      "index": "team_name_idx",
+      "query": "Q06",
+      "rationale": "Q06 starts with Team lookup by name"
+    }
+  ]
+}
