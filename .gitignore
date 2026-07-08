@@ -11,6 +11,7 @@ etl/.env
 
 # Python
 __pycache__/
+.pytest_cache/
 *.py[cod]
 *$py.class
 *.egg-info/
@@ -46,6 +47,11 @@ pptx_build/
 # Course material (not ours)
 DM2526 Instructions on projects.pdf
 Lab_on_PostgreSql.pdf
+instructions_text.txt
+slide_prof_text.txt
+
+# File di prova / bozze locali
+*_prova*.pptx
 
 # Output di benchmark "vecchi" (tieni l'ultimo run nel repo se vuoi)
 # benchmark/results/

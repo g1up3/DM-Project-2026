@@ -9,12 +9,14 @@ consistenza dei risultati, e produce un report con grafici.
 ```
 benchmark/
   queries.py            # definizione delle 12 query con parametri
-  run_benchmark.py      # esegue il benchmark, registra hardware/versioni DB
+  run_benchmark.py      # benchmark + statistiche + EXPLAIN/PROFILE + config DBMS
   verbosity.py          # calcolo LOC + cognitive verbosity (keyword list simmetrica)
-  index_ablation.py     # drop/restore di un indice critico + ri-esecuzione
-  generate_report.py    # produce il report Markdown + 5 grafici PNG
+  index_ablation.py     # matrice (indice, query): drop -> misura -> restore
+  sensitivity_q07.py    # analisi di sensibilita': work_mem e lo spill di Q07
+  generate_report.py    # produce il report Markdown + 6 grafici PNG
   results/              # output di ogni run (timestamped)
   results/index_ablation/  # output dell'esperimento di index ablation
+  results/sensitivity/  # output dell'analisi di sensibilita'
   README.md
 ```
 
@@ -26,7 +28,8 @@ Le query (file SQL e Cypher equivalenti) sono in `queries/sql/` e
 I due database popolati (Postgres + Neo4j) come descritto in `etl/README.md`.
 
 Le dipendenze Python sono nello stesso `requirements.txt` dell'ETL
-(`matplotlib` e' la sola in piu' rispetto al load):
+(`matplotlib`, `numpy` e `scipy` sono quelle in piu' rispetto al load;
+`pytest` serve solo per i test in `tests/`):
 
 ```bash
 source etl/.venv/bin/activate
@@ -36,8 +39,8 @@ pip install -r etl/requirements.txt
 ## Esecuzione
 
 ```bash
-python3 benchmark/run_benchmark.py            # 5 esecuzioni misurate per query (default)
-python3 benchmark/run_benchmark.py --runs 10  # piu' run = stime piu' robuste
+python3 benchmark/run_benchmark.py            # 15 esecuzioni misurate per query (default)
+python3 benchmark/run_benchmark.py --runs 30  # piu' run = CI piu' stretti
 ```
 
 Output (salvato in `benchmark/results/run_YYYYMMDD_HHMMSS/`):
@@ -45,7 +48,10 @@ Output (salvato in `benchmark/results/run_YYYYMMDD_HHMMSS/`):
 | File | Cosa contiene |
 |---|---|
 | `timings.csv` | una riga per ogni esecuzione (warm-up escluso) |
-| `summary.csv` | mediana / min / max / IQR per (query, sistema) |
+| `summary.csv` | mediana / min / max / IQR / CI bootstrap 95% per (query, sistema) |
+| `significance.csv` | Mann-Whitney U, p-value, effect size rank-biserial, vincitore |
+| `plans/` | `EXPLAIN (ANALYZE, BUFFERS)` e `PROFILE` per ognuna delle 12 query |
+| `db_config.json` | configurazione runtime dei DBMS (shared_buffers, heap, pagecache, ...) |
 | `run_metadata.json` | host, platform, CPU, RAM, versioni Postgres/Neo4j, Python, runs |
 
 A schermo viene anche stampata una tabella riassuntiva con il vincitore
@@ -54,13 +60,29 @@ per ogni query e lo speedup.
 ## Index ablation
 
 ```bash
-python3 benchmark/index_ablation.py --runs 5
+python3 benchmark/index_ablation.py            # 10 run per fase (default)
 ```
 
-Esegue Q08 in tre fasi: con indice (`ix_lineup_player` su Postgres,
-`player_name_idx` su Neo4j), dopo `DROP INDEX`, e dopo `CREATE INDEX` di nuovo.
-Output: `benchmark/results/index_ablation/<timestamp>.csv` con la mediana per
-fase. Mostra che gli indici dello schema non sono decorativi.
+Matrice di ablazione su **7 coppie (indice, query)** — 4 su Postgres, 3 su
+Neo4j. Per ogni coppia esegue la query in tre fasi: con indice, dopo
+`DROP INDEX`, e dopo il `CREATE INDEX` di ripristino (con verifica che
+l'indice sia tornato). Output:
+`benchmark/results/index_ablation/<timestamp>.csv` + `.json` con la mediana
+per fase e lo slowdown. Mostra quali indici dello schema sono decorativi e
+quali no.
+
+## Analisi di sensibilita' (work_mem su Q07)
+
+```bash
+python3 benchmark/sensitivity_q07.py           # default: 4MB vs 64MB, 15 run
+```
+
+Il piano di Q07 contiene l'unico spill su disco dell'intero benchmark
+(sort external merge, ~18 MB). Lo script riesegue Q07 su Postgres con valori
+crescenti di `work_mem` (a livello di sessione) e registra mediana, CI e il
+Sort Method estratto da `EXPLAIN ANALYZE`. Il report include automaticamente
+l'ultimo risultato (sez. 10) per decomporre effetto-tuning da
+effetto-paradigma.
 
 ## Generazione del report
 
@@ -70,11 +92,13 @@ python3 benchmark/generate_report.py --run run_20260101_120000   # run specifica
 ```
 
 Output:
-- `reports/benchmark_report.md` — report completo Markdown con setup, sintesi,
-  conclusioni, limitations e bibliografia.
-- `reports/figures/perf_by_query.png` — tempi mediani per ogni query.
+- `reports/benchmark_report.md` — report completo Markdown (15 sezioni: setup,
+  configurazione DBMS, risultati con CI e significativita', query plan,
+  sensitivity, conclusioni, threats to validity, bibliografia).
+- `reports/figures/perf_by_query.png` — tempi mediani con error bar (CI 95%).
 - `reports/figures/perf_by_category.png` — confronto per categoria di query.
-- `reports/figures/speedup.png` — speedup Neo4j vs Postgres.
+- `reports/figures/speedup.png` — speedup Neo4j vs Postgres (saturazione = significativita').
+- `reports/figures/distributions.png` — box plot delle distribuzioni per query.
 - `reports/figures/loc.png` — LOC SQL vs Cypher.
 - `reports/figures/verbosity.png` — cognitive verbosity SQL vs Cypher.
 
@@ -86,16 +110,21 @@ della presentazione (le figure sono in PNG ad alta risoluzione, 140 dpi).
 Per ciascuna query e ciascun sistema:
 1. **Warm-up**: una prima esecuzione viene scartata (riempie le cache dei
    piani di esecuzione e il buffer dei dati).
-2. **N esecuzioni misurate** (default 5).
+2. **N esecuzioni misurate** (default 15).
 3. Tempo misurato tramite `time.perf_counter()` attorno alla `execute` +
    fetch completo dei risultati.
-4. Statistiche: mediana, min, max, IQR (interquartile range) per robustezza
-   anti-outlier.
-5. **Verifica risultati**: i set di tuple restituiti dai due sistemi vengono
+4. Statistiche robuste: mediana, min, max, IQR, e **CI bootstrap al 95%**
+   della mediana (10.000 ricampionamenti, seed fisso 42 per riproducibilita').
+5. **Significativita'**: test di **Mann-Whitney U** (non parametrico,
+   two-sided, alpha = 0.05) + effect size **rank-biserial** per la
+   magnitudine della differenza.
+6. **Query plan**: per ogni query vengono catturati `EXPLAIN (ANALYZE,
+   BUFFERS)` su Postgres e `PROFILE` su Neo4j, salvati in `plans/`.
+7. **Verifica risultati**: i set di tuple restituiti dai due sistemi vengono
    normalizzati (cast di Decimal/float, arrotondamento a 4 decimali, cast
    di date a stringa) e confrontati come `set`. Se differiscono, il report
    lo segnala esplicitamente.
-6. **Query di scrittura (Q11/Q12)**: eseguite in transazione esplicita e
+8. **Query di scrittura (Q11/Q12)**: eseguite in transazione esplicita e
    rolled-back dopo ogni run, in modo che ogni misurazione lavori su stato
    pulito e nessuna modifica resti persistente.
 
