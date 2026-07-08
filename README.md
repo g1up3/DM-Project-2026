@@ -92,7 +92,7 @@ due giocatori (Messi → Pirlo): **8 ms su Neo4j contro 712 ms su Postgres**
 ├── tests/                        # Test unitari dell'harness (pytest)
 ├── Makefile                      # Entry-point unico: make benchmark / report / test
 ├── LICENSE                       # MIT (codice); il dataset resta ODbL, non ridistribuito
-├── Presentation_DM_DAngelica_Leone.pptx   # Slide deck (23 slide)
+├── PostgreSQL_vs_Neo4j_DAngelica_Leone.pptx   # Slide deck della presentazione
 ├── Live_Demo_Script.md           # Sceneggiatura della demo live (~5 min)
 ├── clean/                        # CSV puliti generati da transform.py (non committati)
 └── database/database.sqlite      # Sorgente Kaggle (non committato)
