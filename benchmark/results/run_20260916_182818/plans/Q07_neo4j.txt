@@ -1,0 +1,20 @@
++-- ProduceResults@neo4j  (rows: 550, dbHits: 0)
+    identifiers: ['player_name', 'seasons_played', 'player']
+  +-- Sort@neo4j  (rows: 550, dbHits: 0)
+      identifiers: ['player_name', 'seasons_played', 'player']
+    +-- Projection@neo4j  (rows: 550, dbHits: 0)
+        identifiers: ['player_name', 'seasons_played', 'player']
+      +-- Filter@neo4j  (rows: 550, dbHits: 0)
+          identifiers: ['player_name', 'seasons_played']
+        +-- EagerAggregation@neo4j  (rows: 10848, dbHits: 0)
+            identifiers: ['player_name', 'seasons_played']
+          +-- Projection@neo4j  (rows: 542281, dbHits: 1084562)
+              identifiers: ['p', 'm', 'player_name', 'season']
+            +-- Filter@neo4j  (rows: 542281, dbHits: 1084562)
+                identifiers: ['p', 'm']
+              +-- Expand(All)@neo4j  (rows: 542281, dbHits: 542281)
+                  identifiers: ['p', 'm']
+                +-- CacheProperties@neo4j  (rows: 11060, dbHits: 11584)
+                    identifiers: ['p']
+                  +-- NodeByLabelScan@neo4j  (rows: 11060, dbHits: 11061)
+                      identifiers: ['p']

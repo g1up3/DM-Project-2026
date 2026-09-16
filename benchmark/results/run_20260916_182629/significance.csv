@@ -1,0 +1,13 @@
+query_id,u_stat,p_value,significant,effect_size,winner,speedup
+Q01,197.0,0.000494,True,0.7511,neo4j,1.87
+Q02,178.0,0.007016,True,0.5822,neo4j,1.25
+Q03,4.0,7e-06,True,0.9644,postgres,1.91
+Q04,55.0,0.018067,True,0.5111,postgres,1.13
+Q05,212.0,4e-05,True,0.8844,neo4j,1.53
+Q06,212.0,4e-05,True,0.8844,neo4j,3.41
+Q07,225.0,3e-06,True,1.0,neo4j,6.47
+Q08,186.0,0.002463,True,0.6533,neo4j,1.54
+Q09,0.0,3e-06,True,1.0,postgres,2.38
+Q10,225.0,3e-06,True,1.0,neo4j,68.35
+Q11,225.0,3e-06,True,1.0,neo4j,2.93
+Q12,225.0,3e-06,True,1.0,neo4j,13.96

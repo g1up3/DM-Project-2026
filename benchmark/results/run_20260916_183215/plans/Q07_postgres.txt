@@ -1,0 +1,31 @@
+GroupAggregate  (cost=75627.63..79830.34 rows=54 width=22) (actual time=1334.493..1513.269 rows=550.00 loops=1)
+  Group Key: p.player_name
+  Filter: (count(DISTINCT m.season) = 8)
+  Rows Removed by Filter: 10298
+  Buffers: shared hit=3752, temp read=2299 written=2308
+  ->  Sort  (cost=75627.63..76983.33 rows=542281 width=24) (actual time=1334.326..1465.387 rows=542281.00 loops=1)
+        Sort Key: p.player_name, m.season
+        Sort Method: external merge  Disk: 18392kB
+        Buffers: shared hit=3752, temp read=2299 written=2308
+        ->  Hash Join  (cost=1145.38..12855.94 rows=542281 width=24) (actual time=15.237..174.312 rows=542281.00 loops=1)
+              Hash Cond: (l.player_api_id = p.player_api_id)
+              Buffers: shared hit=3752
+              ->  Hash Join  (cost=801.53..11088.06 rows=542281 width=14) (actual time=10.268..103.108 rows=542281.00 loops=1)
+                    Hash Cond: (l.match_api_id = m.match_api_id)
+                    Buffers: shared hit=3657
+                    ->  Seq Scan on match_lineup l  (cost=0.00..8862.81 rows=542281 width=8) (actual time=0.009..17.326 rows=542281.00 loops=1)
+                          Buffers: shared hit=3440
+                    ->  Hash  (cost=476.79..476.79 rows=25979 width=14) (actual time=10.245..10.245 rows=25979.00 loops=1)
+                          Buckets: 32768  Batches: 1  Memory Usage: 1474kB
+                          Buffers: shared hit=217
+                          ->  Seq Scan on match m  (cost=0.00..476.79 rows=25979 width=14) (actual time=0.007..4.422 rows=25979.00 loops=1)
+                                Buffers: shared hit=217
+              ->  Hash  (cost=205.60..205.60 rows=11060 width=18) (actual time=4.933..4.934 rows=11060.00 loops=1)
+                    Buckets: 16384  Batches: 1  Memory Usage: 691kB
+                    Buffers: shared hit=95
+                    ->  Seq Scan on player p  (cost=0.00..205.60 rows=11060 width=18) (actual time=0.016..2.025 rows=11060.00 loops=1)
+                          Buffers: shared hit=95
+Planning:
+  Buffers: shared hit=28
+Planning Time: 0.337 ms
+Execution Time: 1514.486 ms

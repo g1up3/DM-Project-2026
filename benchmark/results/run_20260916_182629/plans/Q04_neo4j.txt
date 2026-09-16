@@ -1,0 +1,18 @@
++-- ProduceResults@neo4j  (rows: 10, dbHits: 0)
+    identifiers: ['home_matches', 't', 'home_win_pct', 'team', 'home_wins']
+  +-- Projection@neo4j  (rows: 10, dbHits: 20)
+      identifiers: ['home_matches', 't', 'home_win_pct', 'team', 'home_wins']
+    +-- Top@neo4j  (rows: 10, dbHits: 0)
+        identifiers: ['t', 'home_matches', 'home_wins', 'home_win_pct']
+      +-- Projection@neo4j  (rows: 210, dbHits: 0)
+          identifiers: ['t', 'home_matches', 'home_wins', 'home_win_pct']
+        +-- Filter@neo4j  (rows: 210, dbHits: 0)
+            identifiers: ['t', 'home_matches', 'home_wins']
+          +-- OrderedAggregation@neo4j  (rows: 299, dbHits: 103916)
+              identifiers: ['t', 'home_matches', 'home_wins']
+            +-- Filter@neo4j  (rows: 25979, dbHits: 51958)
+                identifiers: ['t', 'm']
+              +-- Expand(All)@neo4j  (rows: 25979, dbHits: 25979)
+                  identifiers: ['t', 'm']
+                +-- NodeByLabelScan@neo4j  (rows: 299, dbHits: 300)
+                    identifiers: ['t']

@@ -1,0 +1,16 @@
++-- ProduceResults@neo4j  (rows: 11, dbHits: 0)
+    identifiers: ['league', 'matches', 'total_goals', 'avg_goals_per_match']
+  +-- Sort@neo4j  (rows: 11, dbHits: 0)
+      identifiers: ['league', 'matches', 'total_goals', 'avg_goals_per_match']
+    +-- Projection@neo4j  (rows: 11, dbHits: 0)
+        identifiers: ['league', 'matches', 'total_goals', 'avg_goals_per_match']
+      +-- EagerAggregation@neo4j  (rows: 11, dbHits: 6652)
+          identifiers: ['league', 'matches', 'total_goals']
+        +-- CacheProperties@neo4j  (rows: 3326, dbHits: 6652)
+            identifiers: ['m', 'l']
+          +-- Filter@neo4j  (rows: 3326, dbHits: 6652)
+              identifiers: ['m', 'l']
+            +-- Expand(All)@neo4j  (rows: 3326, dbHits: 3326)
+                identifiers: ['m', 'l']
+              +-- NodeIndexSeek@neo4j  (rows: 3326, dbHits: 3327)
+                  identifiers: ['m']

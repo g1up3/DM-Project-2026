@@ -1,0 +1,26 @@
+Sort  (cost=588.02..588.97 rows=380 width=206) (actual time=3.022..3.026 rows=11.00 loops=1)
+  Sort Key: ((avg((m.home_team_goal + m.away_team_goal)))::numeric(5,3)) DESC
+  Sort Method: quicksort  Memory: 25kB
+  Buffers: shared hit=48
+  ->  HashAggregate  (cost=566.03..571.73 rows=380 width=206) (actual time=2.999..3.014 rows=11.00 loops=1)
+        Group Key: l.name
+        Batches: 1  Memory Usage: 48kB
+        Buffers: shared hit=48
+        ->  Hash Join  (cost=248.74..516.14 rows=3326 width=182) (actual time=0.122..1.766 rows=3326.00 loops=1)
+              Hash Cond: (m.league_id = l.league_id)
+              Buffers: shared hit=48
+              ->  Bitmap Heap Scan on match m  (cost=230.19..488.76 rows=3326 width=8) (actual time=0.100..0.560 rows=3326.00 loops=1)
+                    Recheck Cond: ((season)::text = '2015/2016'::text)
+                    Heap Blocks: exact=41
+                    Buffers: shared hit=47
+                    ->  Bitmap Index Scan on ix_match_season  (cost=0.00..229.36 rows=3326 width=0) (actual time=0.089..0.089 rows=3326.00 loops=1)
+                          Index Cond: ((season)::text = '2015/2016'::text)
+                          Index Searches: 1
+                          Buffers: shared hit=6
+              ->  Hash  (cost=13.80..13.80 rows=380 width=182) (actual time=0.018..0.019 rows=11.00 loops=1)
+                    Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                    Buffers: shared hit=1
+                    ->  Seq Scan on league l  (cost=0.00..13.80 rows=380 width=182) (actual time=0.010..0.012 rows=11.00 loops=1)
+                          Buffers: shared hit=1
+Planning Time: 0.171 ms
+Execution Time: 3.069 ms

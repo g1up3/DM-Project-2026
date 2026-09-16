@@ -76,7 +76,7 @@ _SQL_KW = [
 _CYP_KW = [
     r"\bOPTIONAL\s+MATCH\b", r"\bORDER\s+BY\b",
     r"\bMATCH\b", r"\bWHERE\b", r"\bWITH\b", r"\bRETURN\b",
-    r"\bLIMIT\b", r"\bUNWIND\b", r"\bCALL\b", r"\bCASE\b",
+    r"\bLIMIT\b", r"\bUNWIND\b", r"\bCALL\b", r"\bSHORTEST\b", r"\bCASE\b",
     r"\bSET\b", r"\bMERGE\b", r"\bCREATE\b", r"\bDELETE\b",
     r"\bIN\b", r"\bAND\b", r"\bOR\b", r"\bNOT\b",
 ]
@@ -526,8 +526,12 @@ def main():
     else:
         md.append("Dati non disponibili. Eseguire `python3 benchmark/index_ablation.py`.\n")
 
-    # --- Sensitivity: work_mem su Q07 ---
-    md.append("\n## 10. Analisi di sensibilita': work_mem e lo spill di Q07\n")
+    # --- Sensitivity ---
+    md.append("\n## 10. Analisi di sensibilita'\n")
+    md.append("Due ipotesi che avrebbero potuto invalidare i risultati principali, "
+              "verificate sperimentalmente: un artefatto di *tuning* (10.1) e un "
+              "artefatto di *semantica* (10.2).\n")
+    md.append("\n### 10.1 work_mem e lo spill di Q07\n")
     sens_dir = RESULTS_DIR / "sensitivity"
     sens_files = sorted(sens_dir.glob("q07_workmem_*.json")) if sens_dir.exists() else []
     ne_q07_med = ne_medians[qids.index("Q07")] if "Q07" in qids else None
@@ -557,6 +561,149 @@ def main():
     else:
         md.append("Dati non disponibili. Eseguire `python3 benchmark/sensitivity_q07.py`.\n")
 
+    # --- Sensitivity: semantica dello shortest path (Q10) ---
+    md.append("\n### 10.2 La semantica dello shortest path in Cypher (Q10)\n")
+    q10_files = sorted(sens_dir.glob("q10_semantics_*.json")) if sens_dir.exists() else []
+    pg_q10_med = pg_medians[qids.index("Q10")] if "Q10" in qids else None
+    if q10_files:
+        s10 = json.loads(q10_files[-1].read_text(encoding="utf-8"))
+        v = s10["variants"]
+        md.append("La BFS SQL di Q10 collega due giocatori solo se hanno vestito la stessa "
+                  "maglia **nella stessa stagione** (`pf2.season = pf1.season`). La "
+                  "formulazione Cypher piu' naturale, `shortestPath((a)-[:PLAYED_FOR*..12]-(b))`, "
+                  "attraversa un nodo `Team` **senza vincolare la stagione** dei due archi "
+                  "consecutivi: e' una relazione di connettivita' piu' lasca, che puo' "
+                  "produrre cammini piu' corti di quelli ammessi dal SQL. Sulla coppia "
+                  "di riferimento le due semantiche coincidono per caso, e la verifica "
+                  "automatica di equivalenza non poteva accorgersene. Abbiamo quindi "
+                  "confrontato tre formulazioni:\n")
+        md.append("| Variante | Semantica | Hop | Mediana (ms) | CI 95% | db hits | Operatore di path |")
+        md.append("|---|---|---:|---:|:---:|---:|---|")
+        labels = {
+            "V0_shortestPath_loose": ("V0 `shortestPath(...*..12)`", "lasca (stagione libera)"),
+            "V1_shortestPath_path_predicate": ("V1 `shortestPath` + predicato di path", "esatta, con fallback esaustivo"),
+            "V2_qpp_shortest_exact": ("**V2 quantified path pattern + `SHORTEST 1`**", "**esatta per costruzione**"),
+        }
+        for key, (lab, sem) in labels.items():
+            r = v.get(key)
+            if not r:
+                continue
+            ci = f"[{r['ci95_lo']:.1f}, {r['ci95_hi']:.1f}]" if r.get("ci95_lo") is not None else "—"
+            med = f"{r['median_ms']:.1f}" if r.get("median_ms") is not None else "—"
+            ops = ", ".join(f"`{o.replace('@neo4j', '')}`" for o in r.get("path_operators", []))
+            md.append(f"| {lab} | {sem} | {r['hops']} | {med} | {ci} | {r['db_hits']} | {ops} |")
+        md.append("")
+        md.append(f"Verifica semantica su {s10['n_pairs']} coppie di giocatori, confrontando gli hop "
+                  f"con la BFS SQL:\n")
+        md.append("| Coppia | SQL | V0 (lasca) | V2 (esatta) | |")
+        md.append("|---|---:|---:|---:|---|")
+        for row in s10["pairs"]:
+            flag = "**V0 diverge**" if row["loose_diverges"] else "ok"
+            md.append(f"| {row['pair'][0]} → {row['pair'][1]} | {row['sql_hops']} | "
+                      f"{row['V0_shortestPath_loose']['hops']} | {row['V2_qpp_shortest_exact']['hops']} | {flag} |")
+        md.append("")
+        div = [r for r in s10["pairs"] if r["loose_diverges"]]
+        ex = div[0] if div else None
+        ex_txt = (f" Esempio: {ex['pair'][0]} → {ex['pair'][1]} dista {ex['sql_hops']} hop di "
+                  f"veri compagni di squadra, ma la formulazione lasca risponde "
+                  f"{ex['V0_shortestPath_loose']['hops']}, passando per una squadra in cui i due "
+                  f"intermedi non hanno mai giocato insieme.") if ex else ""
+        v0, v2 = v.get("V0_shortestPath_loose", {}), v.get("V2_qpp_shortest_exact", {})
+        ratio = (v2["median_ms"] / v0["median_ms"]) if v0.get("median_ms") and v2.get("median_ms") else None
+        md.append(f"**Risultato.** La semantica lasca (V0) da' una risposta diversa dal SQL su "
+                  f"{s10['n_loose_diverges']}/{s10['n_pairs']} coppie; V2 coincide su "
+                  f"{s10['n_exact_matches']}/{s10['n_pairs']}.{ex_txt} "
+                  f"V1 e' corretta ma pericolosa: il suo piano contiene un ramo "
+                  f"`VarLengthExpand` che scatta quando il cammino lasco piu' corto viola il "
+                  f"predicato, degenerando in un'enumerazione esaustiva di tutti i cammini "
+                  f"fino a 12 archi (~200^6 con il grado medio dei nodi `Team`): in un test "
+                  f"senza timeout ha saturato la macchina. **Il benchmark adotta V2**: il "
+                  f"vincolo `r1.season = r2.season` e' scritto *dentro* il gruppo ripetuto del "
+                  f"quantified path pattern (sintassi GQL), il planner usa l'operatore dedicato "
+                  f"`StatefulShortestPath` e il costo dell'esattezza e' "
+                  f"{('%.1fx' % ratio) if ratio else 'contenuto'} rispetto alla versione lasca"
+                  f"{(' — contro un gap di %.0fx con Postgres.' % (pg_q10_med / v2['median_ms'])) if (pg_q10_med and v2.get('median_ms')) else '.'}\n")
+        md.append("Due lezioni. Primo: la verifica di equivalenza su *una* istanza dei "
+                  "parametri e' necessaria ma non sufficiente — i vincoli fra elementi "
+                  "consecutivi di un cammino sono il punto in cui SQL e Cypher divergono "
+                  "piu' facilmente. Secondo: in un graph database la semantica si codifica "
+                  "nella *topologia* o nel *pattern*, non in un filtro a posteriori; il "
+                  "modello alternativo (un nodo `TeamSeason` al posto della proprieta' "
+                  "`season` sulla relazione) renderebbe il vincolo strutturale e la "
+                  "formulazione lasca semplicemente inesprimibile.\n")
+    else:
+        md.append("Dati non disponibili. Eseguire `python3 benchmark/sensitivity_q10.py`.\n")
+
+    # --- Sensitivity: stabilita' cross-run e bloat MVCC ---
+    md.append("\n### 10.3 Stabilita' fra run e bloat MVCC da scritture rolled back\n")
+    cross = []
+    for rd in sorted(p for p in RESULTS_DIR.glob("run_*") if p.is_dir()):
+        if rd.name < "run_20260518" or not (rd / "summary.csv").exists():
+            continue                                   # solo run con il set di query definitivo
+        rows = list(csv.DictReader(open(rd / "summary.csv", encoding="utf-8")))
+        sig = {}
+        if (rd / "significance.csv").exists():
+            sig = {r["query_id"]: r for r in csv.DictReader(open(rd / "significance.csv", encoding="utf-8"))}
+        meta = {}
+        if (rd / "run_metadata.json").exists():
+            meta = json.loads((rd / "run_metadata.json").read_text(encoding="utf-8"))
+        entry = {"run": rd.name, "runs": meta.get("runs", "?"),
+                 "vacuum": bool(meta.get("postgres_vacuum_before_run"))}
+        for r in rows:
+            if r["query_id"] in ("Q01", "Q02"):
+                entry[f"{r['query_id']}_{r['system']}"] = float(r["median_ms"])
+        for q in ("Q01", "Q02"):
+            entry[f"{q}_p"] = sig.get(q, {}).get("p_value", "—")
+        if "Q01_postgres" in entry and "Q02_postgres" in entry:
+            cross.append(entry)
+    if len(cross) >= 2:
+        md.append("Le due query piu' veloci del benchmark (Q01, Q02: mediane fra 4 e 25 ms) "
+                  "sono anche quelle il cui vincitore **cambia da un run all'altro**, pur "
+                  "risultando \"significative\" *dentro* ciascun run. La tabella riporta "
+                  "tutti i run eseguiti con il set di query definitivo:\n")
+        md.append("| Run | N | VACUUM pre-run | Q01 PG | Q01 Neo4j | p | Q02 PG | Q02 Neo4j | p |")
+        md.append("|---|---:|:---:|---:|---:|---:|---:|---:|---:|")
+        for e in cross:
+            md.append(f"| `{e['run']}` | {e['runs']} | {'si' if e['vacuum'] else 'no'} | "
+                      f"{e['Q01_postgres']:.1f} | {e['Q01_neo4j']:.1f} | {e['Q01_p']} | "
+                      f"{e['Q02_postgres']:.1f} | {e['Q02_neo4j']:.1f} | {e['Q02_p']} |")
+        md.append("")
+        md.append("**Causa individuata: bloat MVCC generato dal benchmark stesso.** Q11 aggiorna "
+                  "~40k righe di `match_event` (gli eventi `goal`) e Q12 tutte le 26k righe di "
+                  "`match`; entrambe vengono rolled back, ma in Postgres il rollback **non "
+                  "rimuove** le versioni di tupla create dall'`UPDATE`: ogni run lascia "
+                  "16 x 40k tuple morte esattamente sulle pagine che Q01 scansiona. "
+                  "`pg_stat_user_tables` lo conferma (oltre 1,29 milioni di `n_tup_upd` su "
+                  "`match_event`, 1,45 milioni su `match`), e l'autovacuum e' intervenuto solo "
+                  "*dopo* i due run consecutivi del 16/09 — durante i quali la mediana di Q01 "
+                  "su Postgres e' salita da 10,8 a 16,0 e poi 23,2 ms. Neo4j non ha "
+                  "l'effetto: il rollback scarta le modifiche dal transaction log senza "
+                  "lasciare garbage nello store.\n")
+        md.append("**Correzione del protocollo.** Dall'ultimo run l'harness esegue "
+                  "`VACUUM (ANALYZE)` sulle tabelle coinvolte *prima* delle misure e lo "
+                  "registra in `run_metadata.json`: ogni run e' cosi' indipendente dalla "
+                  "storia delle esecuzioni precedenti. Il run di riferimento di questo "
+                  "report e' il primo con il protocollo corretto.\n")
+        md.append("Il VACUUM ha anche aggiornato le statistiche del planner, con un effetto "
+                  "collaterale visibile su Q03: con la tabella `match` compattata "
+                  "(217 pagine) il planner e' passato dal *Bitmap Index Scan* su "
+                  "`ix_match_season` (47 accessi al buffer, ~2,8 ms) a un *Seq Scan* "
+                  "(217 accessi, ~6 ms). E' una scelta del cost model con "
+                  "`random_page_cost = 4` — il default tarato sui dischi rotanti — che "
+                  "su SSD con working set in cache penalizza l'accesso indicizzato. "
+                  "Non abbiamo modificato il parametro per restare fedeli alla "
+                  "configurazione di default dichiarata, ma e' la dimostrazione che le "
+                  "differenze di categoria A stanno dentro il margine di errore del "
+                  "planner, non del paradigma.\n")
+        md.append("Due lezioni: (i) un benchmark che mescola letture e scritture deve "
+                  "controllare lo *stato fisico* delle tabelle, non solo la cache; "
+                  "(ii) la significativita' statistica entro un run misura il rumore di "
+                  "misurazione, **non** la stabilita' del sistema fra sessioni — per le "
+                  "gare sotto i 20 ms il verdetto onesto e' \"parita' operativa\", "
+                  "qualunque sia il p-value di un singolo run.\n")
+    else:
+        md.append("Dati insufficienti (servono almeno due run con il set di query definitivo).\n")
+
     # --- Ease-of-use ---
     md.append("\n## 11. Ease-of-use e suitability\n")
     md.append("La terza dimensione dichiarata nella proposal e' l'ease-of-use dei due "
@@ -575,7 +722,7 @@ def main():
     md.append("| Strumenti di analisi delle performance | `EXPLAIN (ANALYZE, BUFFERS)`: piano testuale con costi stimati/reali, buffer, tempi per nodo | `PROFILE`: albero di operatori con rows e db hits, visualizzato nel Browser |")
     md.append("| Ambiente interattivo | `psql` / pgAdmin | Neo4j Browser, con visualizzazione nativa del grafo |")
     md.append("| Curva di apprendimento | SQL: prerequisito del corso | Cypher: nuovo per entrambi gli autori; i pattern ASCII-art (`(a)-[:R]->(b)`) sono intuitivi per i traversal, meno per le aggregazioni (Q02, classifica: l'`UNION ALL` SQL diventa un `UNWIND` su una lista di mappe) |")
-    md.append("| Pitfall incontrati | Tipizzazione rigida: colonne pandas integer-con-NaN rifiutate (Challenge 2) | Semantica di `NULL` (`NULL = NULL` e' null: Q05 richiedeva un `IS NOT NULL` esplicito per equivalere al self-join SQL); direzionalita' di `PLAYED_FOR` (6 hop = `*..12` archi); `shortestPath` non esprime predicati fra archi consecutivi |")
+    md.append("| Pitfall incontrati | Tipizzazione rigida: colonne pandas integer-con-NaN rifiutate (Challenge 2) | Semantica di `NULL` (`NULL = NULL` e' null: Q05 richiedeva un `IS NOT NULL` esplicito per equivalere al self-join SQL); direzionalita' di `PLAYED_FOR` (6 hop = 12 archi); `shortestPath` legacy non vincola la stagione fra archi consecutivi — risolto con il quantified path pattern (sez. 10.2) |")
     md.append("")
     md.append("Tre osservazioni:\n")
     md.append("1. **Lo schema esplicito e' un costo iniziale che si ripaga come rete di "
@@ -603,6 +750,20 @@ def main():
               "poliglotta (sez. 13) la risposta pragmatica.\n")
 
     # --- Scalabilita' ---
+    # numeri di Q10 letti dai piani del run di riferimento (non hardcoded)
+    q10_sp = pg_medians[qids.index("Q10")] / ne_medians[qids.index("Q10")] if "Q10" in qids else 0
+    q10_pg_states, q10_pg_buffers, q10_neo_hits = "?", "?", "?"
+    _pgp = run_dir / "plans" / "Q10_postgres.txt"
+    _nep = run_dir / "plans" / "Q10_neo4j.txt"
+    if _pgp.exists():
+        _t = _pgp.read_text(encoding="utf-8")
+        _m = re.search(r"Recursive Union.*?actual time=[^)]*?rows=([\d.]+)", _t)
+        if _m: q10_pg_states = f"{int(float(_m.group(1))):,}".replace(",", ".")
+        _m = re.search(r"Buffers: shared hit=(\d+)", _t)
+        if _m: q10_pg_buffers = f"{int(_m.group(1)):,}".replace(",", ".")
+    if _nep.exists():
+        _hits = [int(h) for h in re.findall(r"dbHits: (\d+)", _nep.read_text(encoding="utf-8"))]
+        if _hits: q10_neo_hits = f"{sum(_hits):,}".replace(",", ".")
     md.append("\n## 12. Considerazioni sulla scalabilita'\n")
     md.append("Il benchmark e' single-node e single-user (8 GB di RAM, working set "
               "interamente in cache: nessun piano contiene `shared read`). Non misura "
@@ -617,15 +778,16 @@ def main():
               "`work_mem` dimensionato. Neo4j aggrega le stesse relazioni in modo "
               "lineare, ma **senza meccanismo di spill**: il grafo deve stare nella "
               "pagecache, altrimenti il degrado e' brusco.\n")
-    md.append("- **Traversal a profondita' variabile (Q10)**: la CTE ricorsiva "
-              "materializza l'intera frontiera BFS — 44.251 stati e 2.977.128 accessi "
-              "al buffer per profondita' <= 6 — un costo che cresce con la dimensione del "
-              "grafo *e* esponenzialmente con la profondita'. `shortestPath()` (BFS "
-              "bidirezionale) tocca 237 db hits: il lavoro dipende dalla lunghezza del "
-              "cammino e dal grado dei nodi attraversati, **non dalla dimensione totale "
-              "del grafo**. E' l'index-free adjacency letta come proprieta' di scaling: "
-              "il 89x osservato non e' un artefatto della taglia del dataset ma tende "
-              "ad *allargarsi* al crescere dei dati.\n")
+    md.append(f"- **Traversal a profondita' variabile (Q10)**: la CTE ricorsiva "
+              f"materializza l'intera frontiera BFS — {q10_pg_states} stati e "
+              f"{q10_pg_buffers} accessi al buffer per profondita' <= 6 — un costo che "
+              f"cresce con la dimensione del grafo *e* esponenzialmente con la "
+              f"profondita'. `SHORTEST 1` (operatore `StatefulShortestPath`, BFS sul "
+              f"pattern) tocca {q10_neo_hits} db hits: il lavoro dipende dalla lunghezza "
+              f"del cammino e dal grado dei nodi attraversati, **non dalla dimensione "
+              f"totale del grafo**. E' l'index-free adjacency letta come proprieta' di "
+              f"scaling: il {q10_sp:.0f}x osservato non e' un artefatto della taglia del "
+              f"dataset ma tende ad *allargarsi* al crescere dei dati.\n")
     md.append("- **Scritture (Q11/Q12)**: in Postgres ogni `UPDATE` crea nuove versioni "
               "di tupla (MVCC) da ripulire con `VACUUM`; in Neo4j la scrittura passa dal "
               "transaction log. Entrambi i sistemi sono stati misurati con un solo "
@@ -642,8 +804,8 @@ def main():
               "(Fabric / composite database) e' manuale, e un traversal che attraversa "
               "una partizione perde l'index-free adjacency. E' il limite noto dei graph "
               "database: il partizionamento di un grafo minimizzando gli archi tagliati "
-              "e' un problema NP-hard, e la proprieta' che rende Q10 89x piu' veloce su "
-              "un nodo e' esattamente quella che **non si distribuisce gratis**.\n")
+              f"e' un problema NP-hard, e la proprieta' che rende Q10 {q10_sp:.0f}x piu' "
+              f"veloce su un nodo e' esattamente quella che **non si distribuisce gratis**.\n")
     md.append("### Verdetto\n")
     md.append("A 10x i dati (80 stagioni, ~5M formazioni, ~9M eventi) entrambi i sistemi "
               "restano su un nodo con accorgimenti ordinari (partizionamento e "
@@ -663,17 +825,36 @@ def main():
     md.append("\n## 13. Conclusioni\n")
     md.append("Sei risultati emersi dai dati:\n")
 
-    md.append(f"\n1. **Postgres domina sulle aggregazioni OLAP-light** (categoria A): "
-              f"3 query su 4 a favore di Postgres. L'ottimizzatore relazionale maturo "
-              f"e gli indici B-tree sono ideali per query con join limitati e aggregazioni "
-              f"semplici.\n")
+    cat_a = [q for q in qids if pivot[q]["postgres"]["category"] == "A_relational"]
+    def _sig_winner(q):
+        if sig_data.get(q, {}).get("significant") != "True":
+            return None
+        return "postgres" if float(pivot[q]["postgres"]["median_ms"]) < float(pivot[q]["neo4j"]["median_ms"]) else "neo4j"
+    a_pg = [q for q in cat_a if _sig_winner(q) == "postgres"]
+    a_ne = [q for q in cat_a if _sig_winner(q) == "neo4j"]
+    a_ns = [q for q in cat_a if _sig_winner(q) is None]
+    q09_speedup = (ne_medians[qids.index("Q09")] / pg_medians[qids.index("Q09")]) if "Q09" in qids else 0
+    a_max = max(max(pg_medians[qids.index(q)], ne_medians[qids.index(q)]) for q in cat_a) if cat_a else 0
+    md.append(f"\n1. **Le aggregazioni OLAP-light (categoria A) sono parita' operativa**: "
+              f"in questo run {len(a_pg)} query su {len(cat_a)} significativamente a favore "
+              f"di Postgres ({', '.join(a_pg) or '—'}), {len(a_ne)} a favore di Neo4j "
+              f"({', '.join(a_ne) or '—'}), {len(a_ns)} non significative "
+              f"({', '.join(a_ns) or '—'}); tutte le mediane sono sotto i {a_max:.0f} ms e il "
+              f"vincitore cambia da un run all'altro (sez. 10.3: in altri run Q03 e Q04 "
+              f"andavano a Postgres). A questa scala l'ottimizzatore relazionale non ha "
+              f"un vantaggio *misurabile* su join di 2-3 tabelle con aggregazione semplice. "
+              f"Il vantaggio netto di Postgres emerge invece dove il join su indici B-tree "
+              f"batte il traversal a profondita' *fissa*: Q09 ({q09_speedup:.1f}x, r = 1.0, "
+              f"stabile in tutti i run).\n")
 
     md.append(f"\n2. **Neo4j domina sul traversal a profondita' variabile** (Q10): "
-              f"**{q10_speedup:.1f}x piu' veloce**. I piani catturati mostrano il perche': "
-              f"la CTE ricorsiva di Postgres materializza l'intera frontiera BFS "
-              f"(decine di migliaia di stati, milioni di accessi al buffer), mentre "
-              f"`shortestPath()` si ferma appena i due fronti si incontrano (poche "
-              f"centinaia di db hits). E' l'effetto dell'index-free adjacency.\n")
+              f"**{q10_speedup:.1f}x piu' veloce**, con semantica *identica* al SQL "
+              f"(vincolo di stagione dentro il quantified path pattern, sez. 10.2). "
+              f"I piani catturati mostrano il perche': la CTE ricorsiva di Postgres "
+              f"materializza l'intera frontiera BFS (decine di migliaia di stati, "
+              f"milioni di accessi al buffer), mentre `SHORTEST 1` esplora solo il "
+              f"vicinato del cammino (poche migliaia di db hits). E' l'effetto "
+              f"dell'index-free adjacency.\n")
 
     md.append(f"\n3. **Neo4j vince anche sull'aggregazione full-scan** (Q07, "
               f"{q07_speedup:.1f}x), ma per una ragione diversa dal traversal: il planner "
@@ -688,8 +869,10 @@ def main():
               f"del *motore di esecuzione* da quello del *modello di carico*.\n")
 
     md.append(f"\n5. **Espressivita'**: Cypher e' sistematicamente piu' breve del SQL "
-              f"equivalente. Il caso estremo e' Q10: 3 LOC / 3 operatori logici in "
-              f"Cypher contro ~21 LOC / ~26 operatori in SQL (CTE ricorsiva BFS).\n")
+              f"equivalente. Il caso estremo e' Q10: {cyp_loc.get('Q10', '?')} LOC / "
+              f"{cyp_verb.get('Q10', '?')} operatori logici in Cypher contro "
+              f"{sql_loc.get('Q10', '?')} LOC / {sql_verb.get('Q10', '?')} operatori in SQL "
+              f"(CTE ricorsiva BFS).\n")
 
     md.append(f"\n6. **Schema flexibility** (Q12): aggiungere un attributo derivato "
               f"a tutti i match costa ~{q12_ne:.0f} ms in Neo4j (singolo `SET`) vs "
@@ -717,11 +900,17 @@ def main():
               "beneficiano della page cache OS e della buffer pool dei DBMS. "
               "Il benchmark misura quindi performance *warm-cache*, coerente con "
               "un sistema in regime.\n")
-    md.append("- **Variabilita' di misurazione**: le query con mediane < 20 ms e "
-              "speedup < 1.3x (Q01, Q02, Q04) hanno CI parzialmente sovrapposti tra "
-              "i due sistemi. Il test di Mann-Whitney identifica quali differenze "
-              "sono statisticamente significative; per Q01 la differenza resta "
-              "nel rumore di misurazione (p = 0.30).\n")
+    md.append("- **Variabilita' di misurazione e stabilita' fra run**: le query con "
+              "mediane sotto i 25 ms (Q01, Q02, Q03, Q04, Q08) hanno vincitori che "
+              "possono cambiare da una sessione all'altra anche quando il test di "
+              "Mann-Whitney li dichiara significativi entro il singolo run (sez. 10.3). "
+              "Le conclusioni del report si appoggiano solo sulle differenze con "
+              "effect size r >= 0.8, stabili in tutti i run.\n")
+    md.append("- **Equivalenza semantica oltre l'istanza misurata**: il confronto "
+              "automatico dei risultati vale per i parametri del benchmark. Per Q10 "
+              "l'equivalenza e' stata verificata anche su 8 coppie di giocatori "
+              "(sez. 10.2), dopo aver scoperto che la formulazione `shortestPath` "
+              "legacy coincideva con il SQL solo per caso.\n")
     md.append("- **Rollback nelle write query**: Q11 e Q12 usano rollback per "
               "mantenere lo stato pulito tra le run. Il costo del rollback e' "
               "escluso dal timer in entrambi i sistemi.\n")

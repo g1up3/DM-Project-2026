@@ -1,0 +1,26 @@
+Limit  (cost=822.55..822.57 rows=10 width=61) (actual time=12.783..12.784 rows=10.00 loops=1)
+  Buffers: shared hit=220
+  ->  Sort  (cost=822.55..822.79 rows=99 width=61) (actual time=12.782..12.783 rows=10.00 loops=1)
+        Sort Key: (round(((100.0 * (sum(CASE WHEN (m.home_team_goal > m.away_team_goal) THEN 1 ELSE 0 END))::numeric) / (count(*))::numeric), 2)) DESC, (count(*)) DESC
+        Sort Method: top-N heapsort  Memory: 26kB
+        Buffers: shared hit=220
+        ->  HashAggregate  (cost=815.47..820.41 rows=99 width=61) (actual time=12.703..12.752 rows=210.00 loops=1)
+              Group Key: t.team_long_name
+              Filter: (count(*) >= 50)
+              Batches: 1  Memory Usage: 72kB
+              Rows Removed by Filter: 86
+              Buffers: shared hit=220
+              ->  Hash Join  (cost=9.73..555.68 rows=25979 width=17) (actual time=0.146..7.303 rows=25979.00 loops=1)
+                    Hash Cond: (m.home_team_api_id = t.team_api_id)
+                    Buffers: shared hit=220
+                    ->  Seq Scan on match m  (cost=0.00..476.79 rows=25979 width=8) (actual time=0.011..1.574 rows=25979.00 loops=1)
+                          Buffers: shared hit=217
+                    ->  Hash  (cost=5.99..5.99 rows=299 width=17) (actual time=0.129..0.129 rows=299.00 loops=1)
+                          Buckets: 1024  Batches: 1  Memory Usage: 23kB
+                          Buffers: shared hit=3
+                          ->  Seq Scan on team t  (cost=0.00..5.99 rows=299 width=17) (actual time=0.006..0.051 rows=299.00 loops=1)
+                                Buffers: shared hit=3
+Planning:
+  Buffers: shared hit=10
+Planning Time: 0.358 ms
+Execution Time: 12.822 ms

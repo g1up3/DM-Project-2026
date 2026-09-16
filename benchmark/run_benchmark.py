@@ -167,6 +167,35 @@ def collect_db_config(pg_conn, neo_session) -> dict:
     return config
 
 
+def vacuum_postgres(conn) -> dict:
+    """VACUUM (ANALYZE) delle tabelle dello schema prima delle misure.
+
+    Le query write Q11/Q12 vengono rolled back, ma in Postgres il rollback non
+    rimuove le versioni di tupla create dall'UPDATE (MVCC): ogni run lascia
+    ~40k tuple morte su match_event e ~26k su match, che degradano le letture
+    dei run successivi finche' l'autovacuum non interviene (vedere report,
+    sez. 10.3). Il VACUUM esplicito rende ogni run indipendente dalla storia.
+    """
+    stats = {}
+    old_autocommit = conn.autocommit
+    conn.autocommit = True                     # VACUUM non puo' girare in transazione
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT relname, n_dead_tup FROM pg_stat_user_tables "
+                        "WHERE schemaname = 'soccer' AND n_dead_tup > 0")
+            stats["dead_tuples_before"] = {r[0]: r[1] for r in cur.fetchall()}
+            cur.execute("VACUUM (ANALYZE) soccer.match_event")
+            cur.execute("VACUUM (ANALYZE) soccer.match")
+            cur.execute("VACUUM (ANALYZE) soccer.match_lineup")
+            cur.execute("VACUUM (ANALYZE) soccer.player")
+        stats["vacuumed"] = ["match_event", "match", "match_lineup", "player"]
+    except Exception as e:
+        stats["error"] = str(e)
+    finally:
+        conn.autocommit = old_autocommit
+    return stats
+
+
 def collect_hardware_info() -> dict:
     info = {
         "host":         platform.node(),
@@ -481,6 +510,10 @@ def main():
 
     db_versions = {}
     db_config = {}
+    print("VACUUM (ANALYZE) delle tabelle Postgres (stato pulito, indipendente dai run precedenti)...")
+    vacuum_stats = vacuum_postgres(pg_conn)
+    if vacuum_stats.get("dead_tuples_before"):
+        print(f"  tuple morte rimosse: {vacuum_stats['dead_tuples_before']}")
     try:
         with driver.session(database=os.getenv("NEO4J_DATABASE", "neo4j")) as neo_session:
             db_versions = collect_db_versions(pg_conn, neo_session)
@@ -574,6 +607,7 @@ def main():
         "n_queries":  len(QUERIES),
         "statistical_method": "Mann-Whitney U (two-sided, alpha=0.05)",
         "ci_method":  "Bootstrap 95% CI of the median (10000 resamples, seed=42)",
+        "postgres_vacuum_before_run": vacuum_stats,
         **collect_hardware_info(),
         **db_versions,
     }

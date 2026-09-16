@@ -94,6 +94,7 @@ CYPHER_KEYWORDS_ORDERED = [
     r"\bLIMIT\b",
     r"\bUNWIND\b",
     r"\bCALL\b",
+    r"\bSHORTEST\b",      # path selector GQL (controparte di RECURSIVE in SQL)
     r"\bCASE\b",
     r"\bSET\b",
     r"\bMERGE\b",

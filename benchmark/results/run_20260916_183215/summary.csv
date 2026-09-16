@@ -1,0 +1,25 @@
+query_id,name,category,system,median_ms,min_ms,max_ms,iqr_ms,ci95_lo,ci95_hi,n_rows,equal_results
+Q01,Top scorers by season,A_relational,postgres,10.276,9.691,26.797,0.806,10.078,10.732,10,True
+Q01,Top scorers by season,A_relational,neo4j,5.78,5.03,9.642,0.429,5.391,5.918,10,True
+Q02,League standings by season,A_relational,postgres,5.214,4.379,7.582,1.757,4.906,6.604,20,True
+Q02,League standings by season,A_relational,neo4j,4.887,2.511,8.257,2.306,2.901,5.396,20,True
+Q03,Goals per match by league,A_relational,postgres,6.325,5.173,8.938,1.686,5.75,7.41,11,True
+Q03,Goals per match by league,A_relational,neo4j,5.397,3.597,10.192,2.361,4.109,5.772,11,True
+Q04,Home win percentage by team,A_relational,postgres,13.576,7.661,19.735,3.107,12.025,15.522,10,True
+Q04,Home win percentage by team,A_relational,neo4j,14.801,12.968,36.899,2.268,13.907,16.064,10,True
+Q05,Goal-assist partnerships,B_multihop,postgres,55.051,54.524,59.233,1.399,54.69,55.816,29,True
+Q05,Goal-assist partnerships,B_multihop,neo4j,41.09,37.506,46.955,1.597,39.827,41.486,29,True
+Q06,Cards received vs Real Madrid,B_multihop,postgres,19.115,17.515,31.247,0.774,18.35,19.157,15,True
+Q06,Cards received vs Real Madrid,B_multihop,neo4j,5.467,3.348,10.208,3.518,4.25,7.677,15,True
+Q07,Players in all 8 seasons,B_multihop,postgres,1432.078,1324.799,1531.125,81.962,1374.605,1462.831,550,True
+Q07,Players in all 8 seasons,B_multihop,neo4j,194.283,188.037,227.288,3.895,191.967,195.793,550,True
+Q08,Teammates of Messi 2015/16,C_graph_native,postgres,7.109,5.165,16.561,3.591,5.617,7.843,20,True
+Q08,Teammates of Messi 2015/16,C_graph_native,neo4j,4.064,2.635,6.14,2.185,3.247,5.574,20,True
+Q09,2-hop teammates of Messi,C_graph_native,postgres,37.39,31.019,112.443,6.337,31.896,38.578,20,True
+Q09,2-hop teammates of Messi,C_graph_native,neo4j,71.974,69.398,86.811,2.091,70.678,72.518,20,True
+Q10,Shortest path Messi -> Pirlo,C_graph_native,postgres,800.641,721.545,856.804,60.42,773.513,835.566,1,True
+Q10,Shortest path Messi -> Pirlo,C_graph_native,neo4j,11.753,10.387,15.965,1.326,11.215,12.3,1,True
+Q11,Bulk UPDATE on event subtype,D_write,postgres,363.458,341.95,410.618,25.028,356.606,378.681,0,True
+Q11,Bulk UPDATE on event subtype,D_write,neo4j,163.909,136.11,202.95,7.661,159.245,166.721,0,True
+Q12,Schema evolution: add totalGoals,D_write,postgres,399.867,263.729,512.148,59.102,346.368,410.46,0,True
+Q12,Schema evolution: add totalGoals,D_write,neo4j,30.019,21.022,34.327,2.295,29.001,31.369,0,True

@@ -1,0 +1,20 @@
++-- ProduceResults@neo4j  (rows: 29, dbHits: 0)
+    identifiers: ['scorer', 'assister', 'partnerships']
+  +-- Sort@neo4j  (rows: 29, dbHits: 0)
+      identifiers: ['scorer', 'assister', 'partnerships']
+    +-- Filter@neo4j  (rows: 29, dbHits: 0)
+        identifiers: ['scorer', 'assister', 'partnerships']
+      +-- EagerAggregation@neo4j  (rows: 12269, dbHits: 50802)
+          identifiers: ['scorer', 'assister', 'partnerships']
+        +-- Filter@neo4j  (rows: 16934, dbHits: 99860)
+            identifiers: ['assister', 'a', 'm', 'g', 'scorer']
+          +-- Expand(All)@neo4j  (rows: 65992, dbHits: 82992)
+              identifiers: ['assister', 'a', 'm', 'g', 'scorer']
+            +-- CacheProperties@neo4j  (rows: 17000, dbHits: 17014)
+                identifiers: ['assister', 'a', 'm']
+              +-- Filter@neo4j  (rows: 17000, dbHits: 34028)
+                  identifiers: ['assister', 'a', 'm']
+                +-- Expand(All)@neo4j  (rows: 17000, dbHits: 17000)
+                    identifiers: ['assister', 'a', 'm']
+                  +-- NodeByLabelScan@neo4j  (rows: 11060, dbHits: 11061)
+                      identifiers: ['assister']

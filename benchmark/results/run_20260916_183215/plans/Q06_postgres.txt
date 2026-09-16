@@ -1,0 +1,52 @@
+Limit  (cost=12546.24..12546.27 rows=15 width=38) (actual time=23.453..23.456 rows=15.00 loops=1)
+  Buffers: shared hit=11790
+  ->  Sort  (cost=12546.24..12546.73 rows=199 width=38) (actual time=23.453..23.454 rows=15.00 loops=1)
+        Sort Key: (count(*)) DESC, p.player_name
+        Sort Method: top-N heapsort  Memory: 26kB
+        Buffers: shared hit=11790
+        ->  GroupAggregate  (cost=12535.88..12541.35 rows=199 width=38) (actual time=23.220..23.387 rows=523.00 loops=1)
+              Group Key: p.player_name
+              Buffers: shared hit=11790
+              ->  Sort  (cost=12535.88..12536.38 rows=199 width=16) (actual time=23.216..23.237 rows=938.00 loops=1)
+                    Sort Key: p.player_name
+                    Sort Method: quicksort  Memory: 57kB
+                    Buffers: shared hit=11790
+                    ->  Nested Loop  (cost=1741.49..12528.28 rows=199 width=16) (actual time=16.905..22.000 rows=938.00 loops=1)
+                          Buffers: shared hit=11790
+                          ->  Hash Join  (cost=1741.21..12466.27 rows=199 width=6) (actual time=16.901..21.284 rows=945.00 loops=1)
+                                Hash Cond: (CASE WHEN (m.home_team_api_id = e.team_api_id) THEN m.away_team_api_id ELSE m.home_team_api_id END = t.team_api_id)
+                                Join Filter: (e.team_api_id <> t.team_api_id)
+                                Buffers: shared hit=8976
+                                ->  Hash Join  (cost=1734.46..12292.32 rows=59772 width=18) (actual time=4.474..18.459 rows=61794.00 loops=1)
+                                      Hash Cond: (e.match_api_id = m.match_api_id)
+                                      Buffers: shared hit=8973
+                                      ->  Bitmap Heap Scan on match_event e  (cost=932.93..11333.87 rows=59772 width=14) (actual time=1.755..9.636 rows=61794.00 loops=1)
+                                            Recheck Cond: ((event_type)::text = 'card'::text)
+                                            Filter: (team_api_id IS NOT NULL)
+                                            Rows Removed by Filter: 320
+                                            Heap Blocks: exact=8705
+                                            Buffers: shared hit=8756
+                                            ->  Bitmap Index Scan on ix_event_type  (cost=0.00..917.99 rows=62075 width=0) (actual time=1.058..1.058 rows=62114.00 loops=1)
+                                                  Index Cond: ((event_type)::text = 'card'::text)
+                                                  Index Searches: 1
+                                                  Buffers: shared hit=51
+                                      ->  Hash  (cost=476.79..476.79 rows=25979 width=12) (actual time=2.714..2.714 rows=25979.00 loops=1)
+                                            Buckets: 32768  Batches: 1  Memory Usage: 1373kB
+                                            Buffers: shared hit=217
+                                            ->  Seq Scan on match m  (cost=0.00..476.79 rows=25979 width=12) (actual time=0.002..1.394 rows=25979.00 loops=1)
+                                                  Buffers: shared hit=217
+                                ->  Hash  (cost=6.74..6.74 rows=1 width=4) (actual time=0.016..0.017 rows=1.00 loops=1)
+                                      Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                      Buffers: shared hit=3
+                                      ->  Seq Scan on team t  (cost=0.00..6.74 rows=1 width=4) (actual time=0.014..0.016 rows=1.00 loops=1)
+                                            Filter: ((team_long_name)::text = 'Real Madrid CF'::text)
+                                            Rows Removed by Filter: 298
+                                            Buffers: shared hit=3
+                          ->  Index Scan using player_pkey on player p  (cost=0.29..0.31 rows=1 width=18) (actual time=0.001..0.001 rows=0.99 loops=945)
+                                Index Cond: (player_api_id = e.player1_id)
+                                Index Searches: 938
+                                Buffers: shared hit=2814
+Planning:
+  Buffers: shared hit=25
+Planning Time: 0.299 ms
+Execution Time: 23.482 ms

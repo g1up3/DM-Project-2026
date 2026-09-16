@@ -1,0 +1,187 @@
+{
+  "timestamp": "20260916_182028",
+  "query_id": "Q10",
+  "runs": 15,
+  "timeout_s": 20.0,
+  "reference_pair": [
+    "Lionel Messi",
+    "Andrea Pirlo"
+  ],
+  "variants": {
+    "V0_shortestPath_loose": {
+      "hops": 2,
+      "n": 15,
+      "median_ms": 2.575,
+      "ci95_lo": 2.282,
+      "ci95_hi": 2.788,
+      "db_hits": 237,
+      "path_operators": [
+        "ShortestPath@neo4j"
+      ]
+    },
+    "V1_shortestPath_path_predicate": {
+      "hops": 2,
+      "n": 15,
+      "median_ms": 5.142,
+      "ci95_lo": 3.422,
+      "ci95_hi": 7.355,
+      "db_hits": 837,
+      "path_operators": [
+        "ShortestPath@neo4j",
+        "VarLengthExpand(Into)@neo4j"
+      ]
+    },
+    "V2_qpp_shortest_exact": {
+      "hops": 2,
+      "n": 15,
+      "median_ms": 4.913,
+      "ci95_lo": 4.041,
+      "ci95_hi": 5.759,
+      "db_hits": 4402,
+      "path_operators": [
+        "StatefulShortestPath(Into, Trail)@neo4j"
+      ]
+    }
+  },
+  "pairs": [
+    {
+      "pair": [
+        "Lionel Messi",
+        "Andrea Pirlo"
+      ],
+      "sql_hops": 2,
+      "V0_shortestPath_loose": {
+        "hops": 2,
+        "ms": 9.4
+      },
+      "V2_qpp_shortest_exact": {
+        "hops": 2,
+        "ms": 8.01
+      },
+      "loose_diverges": false,
+      "exact_matches": true
+    },
+    {
+      "pair": [
+        "Lionel Messi",
+        "Gianluigi Buffon"
+      ],
+      "sql_hops": 2,
+      "V0_shortestPath_loose": {
+        "hops": 2,
+        "ms": 8.94
+      },
+      "V2_qpp_shortest_exact": {
+        "hops": 2,
+        "ms": 7.06
+      },
+      "loose_diverges": false,
+      "exact_matches": true
+    },
+    {
+      "pair": [
+        "Cristiano Ronaldo",
+        "Francesco Totti"
+      ],
+      "sql_hops": 2,
+      "V0_shortestPath_loose": {
+        "hops": 2,
+        "ms": 9.41
+      },
+      "V2_qpp_shortest_exact": {
+        "hops": 2,
+        "ms": 6.14
+      },
+      "loose_diverges": false,
+      "exact_matches": true
+    },
+    {
+      "pair": [
+        "Zlatan Ibrahimovic",
+        "Manuel Neuer"
+      ],
+      "sql_hops": 3,
+      "V0_shortestPath_loose": {
+        "hops": 2,
+        "ms": 8.68
+      },
+      "V2_qpp_shortest_exact": {
+        "hops": 3,
+        "ms": 47.79
+      },
+      "loose_diverges": true,
+      "exact_matches": true
+    },
+    {
+      "pair": [
+        "Luis Suarez",
+        "Robert Lewandowski"
+      ],
+      "sql_hops": 2,
+      "V0_shortestPath_loose": {
+        "hops": 2,
+        "ms": 6.84
+      },
+      "V2_qpp_shortest_exact": {
+        "hops": 2,
+        "ms": 5.28
+      },
+      "loose_diverges": false,
+      "exact_matches": true
+    },
+    {
+      "pair": [
+        "Wayne Rooney",
+        "Giorgio Chiellini"
+      ],
+      "sql_hops": 2,
+      "V0_shortestPath_loose": {
+        "hops": 2,
+        "ms": 7.29
+      },
+      "V2_qpp_shortest_exact": {
+        "hops": 2,
+        "ms": 9.5
+      },
+      "loose_diverges": false,
+      "exact_matches": true
+    },
+    {
+      "pair": [
+        "Neymar",
+        "Antonio Di Natale"
+      ],
+      "sql_hops": 2,
+      "V0_shortestPath_loose": {
+        "hops": 2,
+        "ms": 3.7
+      },
+      "V2_qpp_shortest_exact": {
+        "hops": 2,
+        "ms": 4.48
+      },
+      "loose_diverges": false,
+      "exact_matches": true
+    },
+    {
+      "pair": [
+        "Sergio Ramos",
+        "Eden Hazard"
+      ],
+      "sql_hops": 2,
+      "V0_shortestPath_loose": {
+        "hops": 2,
+        "ms": 7.7
+      },
+      "V2_qpp_shortest_exact": {
+        "hops": 2,
+        "ms": 9.22
+      },
+      "loose_diverges": false,
+      "exact_matches": true
+    }
+  ],
+  "n_pairs": 8,
+  "n_loose_diverges": 1,
+  "n_exact_matches": 8
+}

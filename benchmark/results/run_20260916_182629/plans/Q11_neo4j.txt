@@ -1,0 +1,10 @@
++-- ProduceResults@neo4j  (rows: 0, dbHits: 0)
+    identifiers: ['g']
+  +-- EmptyResult@neo4j  (rows: 0, dbHits: 0)
+      identifiers: ['g']
+    +-- SetProperty@neo4j  (rows: 21442, dbHits: 85768)
+        identifiers: ['g']
+      +-- Filter@neo4j  (rows: 21442, dbHits: 61107)
+          identifiers: ['g']
+        +-- DirectedRelationshipTypeScan@neo4j  (rows: 39665, dbHits: 39666)
+            identifiers: ['g']

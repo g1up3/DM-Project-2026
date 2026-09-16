@@ -1,0 +1,14 @@
+Update on match_event  (cost=611.78..16553.05 rows=0 width=0) (actual time=507.080..507.081 rows=0.00 loops=1)
+  Buffers: shared hit=515503 read=9940 dirtied=7784 written=7868
+  ->  Bitmap Heap Scan on match_event  (cost=611.78..16553.05 rows=33532 width=104) (actual time=15.303..75.403 rows=21551.00 loops=1)
+        Recheck Cond: ((event_type)::text = 'goal'::text)
+        Filter: (subtype IS NOT NULL)
+        Rows Removed by Filter: 18429
+        Heap Blocks: exact=11550
+        Buffers: shared hit=2460 read=9478 dirtied=7461 written=7445
+        ->  Bitmap Index Scan on ix_event_type  (cost=0.00..603.39 rows=40929 width=0) (actual time=13.167..13.167 rows=360613.00 loops=1)
+              Index Cond: ((event_type)::text = 'goal'::text)
+              Index Searches: 1
+              Buffers: shared hit=55 read=333 written=219
+Planning Time: 0.099 ms
+Execution Time: 507.108 ms

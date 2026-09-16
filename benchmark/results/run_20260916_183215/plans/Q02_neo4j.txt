@@ -1,0 +1,36 @@
++-- ProduceResults@neo4j  (rows: 20, dbHits: 0)
+    identifiers: ['points', 'team', 'goals_against', 'goal_diff', 'gf', 'goals_for', 'ga']
+  +-- Projection@neo4j  (rows: 20, dbHits: 0)
+      identifiers: ['points', 'team', 'goals_against', 'goal_diff', 'gf', 'goals_for', 'ga']
+    +-- Sort@neo4j  (rows: 20, dbHits: 0)
+        identifiers: ['points', 'team', 'goal_diff', 'gf', 'ga']
+      +-- Projection@neo4j  (rows: 20, dbHits: 40)
+          identifiers: ['points', 'team', 'goal_diff', 'gf', 'ga']
+        +-- EagerAggregation@neo4j  (rows: 20, dbHits: 0)
+            identifiers: ['team', 'points', 'gf', 'ga']
+          +-- Unwind@neo4j  (rows: 760, dbHits: 0)
+              identifiers: ['anon_6', 'anon_7', 'rows', 'r']
+            +-- Projection@neo4j  (rows: 1, dbHits: 0)
+                identifiers: ['anon_6', 'anon_7', 'rows']
+              +-- EagerAggregation@neo4j  (rows: 1, dbHits: 0)
+                  identifiers: ['anon_6', 'anon_7']
+                +-- CacheProperties@neo4j  (rows: 380, dbHits: 1140)
+                    identifiers: ['apts', 'm', 'anon_1', 'home', 'hpts', 'away']
+                  +-- Projection@neo4j  (rows: 380, dbHits: 1520)
+                      identifiers: ['apts', 'm', 'anon_1', 'home', 'hpts', 'away']
+                    +-- Filter@neo4j  (rows: 380, dbHits: 760)
+                        identifiers: ['anon_1', 'm', 'away', 'home']
+                      +-- Expand(All)@neo4j  (rows: 380, dbHits: 760)
+                          identifiers: ['anon_1', 'm', 'away', 'home']
+                        +-- Filter@neo4j  (rows: 380, dbHits: 760)
+                            identifiers: ['anon_1', 'm', 'away']
+                          +-- Expand(All)@neo4j  (rows: 380, dbHits: 760)
+                              identifiers: ['anon_1', 'm', 'away']
+                            +-- Filter@neo4j  (rows: 380, dbHits: 6794)
+                                identifiers: ['anon_1', 'm']
+                              +-- Expand(All)@neo4j  (rows: 3017, dbHits: 3017)
+                                  identifiers: ['anon_1', 'm']
+                                +-- Filter@neo4j  (rows: 1, dbHits: 11)
+                                    identifiers: ['anon_1']
+                                  +-- NodeByLabelScan@neo4j  (rows: 11, dbHits: 12)
+                                      identifiers: ['anon_1']
