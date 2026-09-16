@@ -1,6 +1,6 @@
 # Live demo script — 5 minutes
 
-Companion to the slides. The demo runs after slide 20 ("Thank you").
+Companion to the slides. The demo runs after slide 15 (Verdict); slides 16-18 are backup.
 Total time: **~5 minutes**. Speak in English.
 
 ## Setup before the talk
@@ -17,7 +17,7 @@ Have ready, on screen (Cmd+Tab between them):
 Pre-warm both DBs by running each demo query once in advance — the first
 execution after a cold start is always slower and ruins the on-stage timing.
 
-GitHub repos for reference (also on the QR code on slide 20):
+Project repository (tag `v1.0-submission`): https://github.com/g1up3/DM-Project-2026
 - Giuseppe: https://github.com/g1up3
 - Nicolas:  https://github.com/theunick
 
@@ -35,7 +35,7 @@ Open `queries/sql/Q10_shortest_path_between_players.sql` in the editor
 beside the terminal. Scroll through it briefly.
 
 > "In SQL, this is a recursive CTE doing a breadth-first search up to depth 6.
->  Thirty lines of code, twenty-eight logical operators."
+>  Twenty-one lines of code, twenty-six logical operators."
 
 Switch to the psql terminal and run:
 
@@ -43,9 +43,9 @@ Switch to the psql terminal and run:
 \i queries/demo/Q10_shortest_path.sql
 ```
 
-Expected: ~620 ms, single result row showing the hop count.
+Expected: ~700-760 ms, single result row showing the hop count (**2**).
 
-> "About six hundred milliseconds, two hops between them."
+> "About seven hundred milliseconds, two hops between them."
 
 ### 1B — Show the Neo4j version (30 s)
 
@@ -67,9 +67,9 @@ Run.
 Point at the *Started streaming N records after X ms* line at the bottom of
 the result panel.
 
-> "**Twelve milliseconds.** Same data, same question, same answer.
->  **Fifty-three times faster**, **three lines** of code instead of thirty,
->  **three operators** instead of twenty-eight."
+> "**Eight milliseconds.** Same data, same question, same answer.
+>  **Almost ninety times faster**, **three lines** of code instead of twenty-one,
+>  **three operators** instead of twenty-six."
 
 ### 1C — Visualise the actual path (30 s)
 
@@ -101,15 +101,16 @@ Switch to psql:
 \i queries/demo/Q02_league_standings.sql
 ```
 
-Expected: ~5-6 ms.
+Expected: ~7 ms.
 
-> "About five milliseconds. Twenty teams of Serie A 2015/16 with full standings —
+> "About seven milliseconds. Twenty teams of Serie A 2015/16 with full standings —
 >  points, goals for, goals against."
 
 Switch to Neo4j Browser and run the equivalent Cypher (paste from
 `queries/cypher/Q02_league_standings.cypher`).
 
-> "Around seven. Postgres wins again — classical OLAP territory."
+> "Around nine. Postgres wins — classical OLAP territory. Small margin, but
+>  statistically significant over fifteen runs."
 
 > "This is the lesson: classical OLAP-style aggregations are exactly what
 >  PostgreSQL has been optimised to do for thirty years. The graph paradigm
@@ -133,7 +134,7 @@ UPDATE soccer.match SET total_goals = home_team_goal + away_team_goal;
 
 > "Two statements. ALTER TABLE took the lock, UPDATE backfilled the column."
 
-Show the timing — typically a few hundred ms across both.
+Show the timing — ~440 ms across both (benchmark median).
 
 > "Cleanup..."
 
@@ -148,7 +149,7 @@ MATCH (m:Match)
 SET   m.totalGoals = m.homeGoals + m.awayGoals;
 ```
 
-> "**One statement.** No DDL. No migration step. Just SET the property —
+> "**One statement, about thirty milliseconds.** No DDL. No migration step. Just SET the property —
 >  same logical operation, same semantics, but the schema is *implicit*.
 >  This is the trade-off NoSQL was designed for: **flexibility is part of
 >  the data model**, not a separate concern."
@@ -163,7 +164,7 @@ MATCH (m:Match) REMOVE m.totalGoals;
 
 ## Act 4 — Closing (~30 s)
 
-Switch back to the slides (slide 19 — Verdict).
+Switch back to the slides (slide 15 — Verdict).
 
 > "So, the verdict. **PostgreSQL** when the workload is OLAP, integrity is
 >  paramount, and the schema is stable. **Neo4j** when the data is naturally
@@ -182,12 +183,12 @@ Switch back to the slides (slide 19 — Verdict).
 ```sql
 DROP INDEX soccer.ix_lineup_player;
 \i queries/demo/Q08_teammates_messi.sql
--- typically 50-200x slower
+-- ~3.5x slower (3.2 ms -> 11.2 ms in the ablation run)
 CREATE INDEX ix_lineup_player ON soccer.match_lineup(player_api_id);
 ```
 
 > "The few milliseconds we saw on Q08 aren't free. Drop one index and Postgres goes
->  from 3.5 ms to 11.5 ms — a 3.2x slowdown. The whole engineering story is in those numbers."
+>  from 3.2 ms to 11.2 ms — a 3.5x slowdown. The whole engineering story is in those numbers."
 
 Use this only if the audience seems engaged on engineering details.
 
@@ -195,13 +196,19 @@ Use this only if the audience seems engaged on engineering details.
 
 ## Backup queries (in case something breaks)
 
-If a demo connection fails, fall back to running the query directly in the
-terminal via `cypher-shell`:
+If the Neo4j Browser fails, fall back to the terminal bundled with Neo4j
+Desktop (DBMS card → ⋯ → *Terminal*), which has `cypher-shell` on its PATH:
 
 ```bash
-cypher-shell -u neo4j -p <password> < queries/cypher/Q10_shortest_path_between_players.cypher
+cypher-shell -u neo4j -p <password> --param "player_a => 'Lionel Messi'" --param "player_b => 'Andrea Pirlo'" < queries/cypher/Q10_shortest_path_between_players.cypher
 ```
 
+(`cypher-shell` is NOT on the macOS PATH outside that terminal.)
+
 If the Neo4j Browser gets stuck on a long query, just say *"the query is
-returning a path that you've seen on slide 15 — let's continue"* and move
+returning a path that you've seen on slide 11 — let's continue"* and move
 on. Do not let any demo issue eat more than 30 seconds of stage time.
+
+**Ultimate fallback**: the numbers are all in `reports/benchmark_report.md`
+(section 2) and the query plans in `benchmark/results/run_20260524_230038/plans/`
+— if a database is down, show the captured plan instead of running live.

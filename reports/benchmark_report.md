@@ -518,7 +518,57 @@ Q07 e' stata rieseguita solo su Postgres (15 run + warm-up per configurazione, `
 **Risultato: ipotesi smentita.** Eliminare lo spill (il sort passa a quicksort interamente in memoria) sposta la mediana dello 0.1%. Su macOS i file temporanei restano nella page cache del sistema operativo, quindi l'external merge non paga I/O fisico. Il collo di bottiglia reale e' la strategia sort-based scelta dal planner per `COUNT(DISTINCT)` su 542k righe, non il disco: il gap con Neo4j (hash aggregation sulle relazioni) **non e' un artefatto di tuning**.
 
 
-## 11. Conclusioni
+## 11. Ease-of-use e suitability
+
+La terza dimensione dichiarata nella proposal e' l'ease-of-use dei due sistemi. E' per natura la meno misurabile: per non ridurla a un'opinione, la ancoriamo a **proxy oggettivi prodotti dal progetto stesso** (righe di codice della pipeline, dipendenze, statement DDL) e ai problemi **effettivamente incontrati** e documentati in `reports/engineering_challenges.md` e nella storia del repository.
+
+| Aspetto | PostgreSQL | Neo4j |
+|---|---|---|
+| Definizione dello schema | 9 `CREATE TABLE` + 19 indici; tipi, PK composite, FK e `CHECK` espliciti | 7 constraint di unicita' + 4 indici; lo schema e' *implicito*, emerge dal load |
+| Bulk load (~1.5M righe) | `COPY FROM STDIN`: 1 statement per tabella, nessuna dipendenza esterna | `LOAD CSV`; per le 542k `LINEUP_OF` serve `apoc.periodic.iterate` (batch 5000) — cioe' il **plugin APOC** — o una transazione monolitica |
+| Codice di load (LOC) | 150 (`load_postgres.py`) | 240 (`load_neo4j.py`, +60%) |
+| Relazione derivata player-team-season | `CREATE MATERIALIZED VIEW` + `REFRESH` | `MATCH ... MERGE` di aggregazione post-load |
+| Integrita' referenziale | **Enforced**: il `COPY` di `match_event` e' *fallito* per FK violation, rivelando 5.632 riferimenti orfani (Challenge 1) | Non esiste FK: un `MATCH` su un `Player` mancante non lega la riga e la **scarta in silenzio** — lo stesso difetto sarebbe passato inosservato |
+| Strumenti di analisi delle performance | `EXPLAIN (ANALYZE, BUFFERS)`: piano testuale con costi stimati/reali, buffer, tempi per nodo | `PROFILE`: albero di operatori con rows e db hits, visualizzato nel Browser |
+| Ambiente interattivo | `psql` / pgAdmin | Neo4j Browser, con visualizzazione nativa del grafo |
+| Curva di apprendimento | SQL: prerequisito del corso | Cypher: nuovo per entrambi gli autori; i pattern ASCII-art (`(a)-[:R]->(b)`) sono intuitivi per i traversal, meno per le aggregazioni (Q02, classifica: l'`UNION ALL` SQL diventa un `UNWIND` su una lista di mappe) |
+| Pitfall incontrati | Tipizzazione rigida: colonne pandas integer-con-NaN rifiutate (Challenge 2) | Semantica di `NULL` (`NULL = NULL` e' null: Q05 richiedeva un `IS NOT NULL` esplicito per equivalere al self-join SQL); direzionalita' di `PLAYED_FOR` (6 hop = `*..12` archi); `shortestPath` non esprime predicati fra archi consecutivi |
+
+Tre osservazioni:
+
+1. **Lo schema esplicito e' un costo iniziale che si ripaga come rete di sicurezza.** Le 273 righe di DDL di Postgres sono sembrate overhead finche' il vincolo FK ha intercettato un difetto reale del dataset che il modello a grafo avrebbe assorbito silenziosamente. In un progetto data-intensive, *fallire presto* e' una feature.
+
+2. **Scrivere query e' piu' facile in Cypher, caricare dati e' piu' facile in SQL.** Un pattern come `(:Team {name:'Milan'})<-[:PLAYED_FOR]-(p)-[:PLAYED_FOR]->(:Team {name:'Juventus'})` sostituisce quattro join; ma il bulk load ha richiesto +60% di codice e un plugin, e l'assenza di tipi sui property ha spostato la validazione sull'ETL.
+
+3. **La semantica implicita di Cypher e' la fonte principale di errori sottili.** Tutti e tre i pitfall Cypher (NULL, direzionalita', predicati di path) sono emersi solo grazie alla verifica automatica di equivalenza dei risultati: senza un oracolo relazionale accanto, sarebbero rimasti invisibili. E' un argomento a favore di mantenere entrambi i sistemi durante lo sviluppo, anche quando la produzione ne usera' uno solo.
+
+**Suitability per il dominio**: il dataset calcistico e' *misto*: le anagrafiche, le classifiche e le statistiche per stagione sono relazionali; le reti di compagni di squadra e le catene di trasferimenti sono grafi. Nessuno dei due modelli e' "naturale" per l'intero dominio, il che rende il caso di studio adatto a un confronto — e la persistenza poliglotta (sez. 13) la risposta pragmatica.
+
+
+## 12. Considerazioni sulla scalabilita'
+
+Il benchmark e' single-node e single-user (8 GB di RAM, working set interamente in cache: nessun piano contiene `shared read`). Non misura la scalabilita', ma i piani catturati permettono di **ragionare su come i costi crescono** con i dati, e l'architettura dei due sistemi su come si distribuiscono.
+
+### Crescita dei dati su un singolo nodo
+
+- **Aggregazioni full-scan (Q07)**: il piano Postgres ordina 542.281 righe (`external merge`, 18 MB); il costo e' O(n log n) nel numero di righe di formazione. A 10x (80 stagioni) lo spill crescerebbe in proporzione, ma il rimedio e' standard: partizionamento dichiarativo per `season` e `work_mem` dimensionato. Neo4j aggrega le stesse relazioni in modo lineare, ma **senza meccanismo di spill**: il grafo deve stare nella pagecache, altrimenti il degrado e' brusco.
+
+- **Traversal a profondita' variabile (Q10)**: la CTE ricorsiva materializza l'intera frontiera BFS — 44.251 stati e 2.977.128 accessi al buffer per profondita' <= 6 — un costo che cresce con la dimensione del grafo *e* esponenzialmente con la profondita'. `shortestPath()` (BFS bidirezionale) tocca 237 db hits: il lavoro dipende dalla lunghezza del cammino e dal grado dei nodi attraversati, **non dalla dimensione totale del grafo**. E' l'index-free adjacency letta come proprieta' di scaling: il 89x osservato non e' un artefatto della taglia del dataset ma tende ad *allargarsi* al crescere dei dati.
+
+- **Scritture (Q11/Q12)**: in Postgres ogni `UPDATE` crea nuove versioni di tupla (MVCC) da ripulire con `VACUUM`; in Neo4j la scrittura passa dal transaction log. Entrambi i sistemi sono stati misurati con un solo writer: sotto scrittori concorrenti entrano in gioco lock a livello di riga (Postgres) e di nodo/relazione (Neo4j), non testati.
+
+### Scaling orizzontale
+
+- **PostgreSQL**: la replica in streaming scala le *letture* senza toccare le query (l'intero benchmark read girerebbe invariato su una replica). Lo sharding dei *dati* (Citus) richiede una chiave di distribuzione; i join multi-hop di Q09/Q10 fra shard diversi diventano join di rete e degradano.
+
+- **Neo4j**: il causal cluster replica l'**intero grafo** su ogni core member — scala le letture, non i dati. Il partizionamento reale (Fabric / composite database) e' manuale, e un traversal che attraversa una partizione perde l'index-free adjacency. E' il limite noto dei graph database: il partizionamento di un grafo minimizzando gli archi tagliati e' un problema NP-hard, e la proprieta' che rende Q10 89x piu' veloce su un nodo e' esattamente quella che **non si distribuisce gratis**.
+
+### Verdetto
+
+A 10x i dati (80 stagioni, ~5M formazioni, ~9M eventi) entrambi i sistemi restano su un nodo con accorgimenti ordinari (partizionamento e `work_mem` per Postgres, pagecache dimensionata per Neo4j) e i rapporti osservati si conservano o si accentuano a favore di Neo4j sui traversal. Oltre la memoria di una singola macchina, il workload OLAP scala meglio in Postgres (Citus, storage colonnare); il workload a grafo scala in Neo4j solo finche' il grafo e' replicabile per intero. La misura di questi regimi e' il lavoro futuro piu' rilevante (sez. 16).
+
+
+## 13. Conclusioni
 
 Sei risultati emersi dai dati:
 
@@ -547,10 +597,10 @@ Sei risultati emersi dai dati:
 
 - **Neo4j**: dominio intrinsecamente a grafo, traversal a profondita' variabile (raccomandazione, fraud detection, supply chain), schema evolution frequente.
 
-- **Polyglot persistence**: in produzione i due DB spesso coesistono, ciascuno gestendo la parte del dominio per cui e' nato.
+- **Polyglot persistence**: in produzione i due DB spesso coesistono, ciascuno gestendo la parte del dominio per cui e' nato. L'analisi di ease-of-use (sez. 11) aggiunge un argomento operativo: tenere il modello relazionale accanto a quello a grafo durante lo sviluppo intercetta errori di dati e di semantica che il grafo da solo assorbe in silenzio.
 
 
-## 12. Threats to validity
+## 14. Threats to validity
 
 
 ### Validita' interna
@@ -580,7 +630,7 @@ Sei risultati emersi dai dati:
 - **Tassonomia delle query**: la classificazione A/B/C/D e' definita *a priori* in base alla struttura logica, non *a posteriori* in base ai risultati. Questo previene il cherry-picking.
 
 
-## 13. Note metodologiche
+## 15. Note metodologiche
 
 - I tempi riportati sono **mediani**; min, max, IQR e 95% CI sono in `summary.csv`.
 
@@ -593,7 +643,7 @@ Sei risultati emersi dai dati:
 - I query plan (`EXPLAIN ANALYZE` e `PROFILE`) sono catturati automaticamente dall'harness e salvati in `plans/`.
 
 
-## 14. Limitations e lavoro futuro
+## 16. Limitations e lavoro futuro
 
 Restano fuori dallo scope di questo lavoro:
 
@@ -601,14 +651,14 @@ Restano fuori dallo scope di questo lavoro:
 
 - Carico **OLTP intensivo** (insert rate, transazioni distribuite).
 
-- Scaling **orizzontale** (sharding Postgres con Citus vs Neo4j Fabric).
+- Scaling **orizzontale** (sharding Postgres con Citus vs Neo4j Fabric): discusso qualitativamente in sez. 12, non misurato.
 
 - Benchmark **standardizzati** su dataset grafo (LDBC Social Network Benchmark).
 
 - **Tuning sistematico** dei sistemi: esplorato solo `work_mem` su Q07 (sez. 10); resta fuori un grid completo (shared_buffers, pagecache, parallelismo).
 
 
-## 15. Riferimenti
+## 17. Riferimenti
 
 - Angles, R., Gutierrez, C. (2008). *Survey of Graph Database Models*. ACM Computing Surveys, 40(1).
 

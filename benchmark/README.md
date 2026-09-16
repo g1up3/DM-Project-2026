@@ -92,9 +92,10 @@ python3 benchmark/generate_report.py --run run_20260101_120000   # run specifica
 ```
 
 Output:
-- `reports/benchmark_report.md` — report completo Markdown (15 sezioni: setup,
+- `reports/benchmark_report.md` — report completo Markdown (17 sezioni: setup,
   configurazione DBMS, risultati con CI e significativita', query plan,
-  sensitivity, conclusioni, threats to validity, bibliografia).
+  sensitivity, ease-of-use, scalabilita', conclusioni, threats to validity,
+  bibliografia).
 - `reports/figures/perf_by_query.png` — tempi mediani con error bar (CI 95%).
 - `reports/figures/perf_by_category.png` — confronto per categoria di query.
 - `reports/figures/speedup.png` — speedup Neo4j vs Postgres (saturazione = significativita').

@@ -557,13 +557,110 @@ def main():
     else:
         md.append("Dati non disponibili. Eseguire `python3 benchmark/sensitivity_q07.py`.\n")
 
+    # --- Ease-of-use ---
+    md.append("\n## 11. Ease-of-use e suitability\n")
+    md.append("La terza dimensione dichiarata nella proposal e' l'ease-of-use dei due "
+              "sistemi. E' per natura la meno misurabile: per non ridurla a un'opinione, "
+              "la ancoriamo a **proxy oggettivi prodotti dal progetto stesso** (righe di "
+              "codice della pipeline, dipendenze, statement DDL) e ai problemi "
+              "**effettivamente incontrati** e documentati in "
+              "`reports/engineering_challenges.md` e nella storia del repository.\n")
+    md.append("| Aspetto | PostgreSQL | Neo4j |")
+    md.append("|---|---|---|")
+    md.append("| Definizione dello schema | 9 `CREATE TABLE` + 19 indici; tipi, PK composite, FK e `CHECK` espliciti | 7 constraint di unicita' + 4 indici; lo schema e' *implicito*, emerge dal load |")
+    md.append("| Bulk load (~1.5M righe) | `COPY FROM STDIN`: 1 statement per tabella, nessuna dipendenza esterna | `LOAD CSV`; per le 542k `LINEUP_OF` serve `apoc.periodic.iterate` (batch 5000) — cioe' il **plugin APOC** — o una transazione monolitica |")
+    md.append("| Codice di load (LOC) | 150 (`load_postgres.py`) | 240 (`load_neo4j.py`, +60%) |")
+    md.append("| Relazione derivata player-team-season | `CREATE MATERIALIZED VIEW` + `REFRESH` | `MATCH ... MERGE` di aggregazione post-load |")
+    md.append("| Integrita' referenziale | **Enforced**: il `COPY` di `match_event` e' *fallito* per FK violation, rivelando 5.632 riferimenti orfani (Challenge 1) | Non esiste FK: un `MATCH` su un `Player` mancante non lega la riga e la **scarta in silenzio** — lo stesso difetto sarebbe passato inosservato |")
+    md.append("| Strumenti di analisi delle performance | `EXPLAIN (ANALYZE, BUFFERS)`: piano testuale con costi stimati/reali, buffer, tempi per nodo | `PROFILE`: albero di operatori con rows e db hits, visualizzato nel Browser |")
+    md.append("| Ambiente interattivo | `psql` / pgAdmin | Neo4j Browser, con visualizzazione nativa del grafo |")
+    md.append("| Curva di apprendimento | SQL: prerequisito del corso | Cypher: nuovo per entrambi gli autori; i pattern ASCII-art (`(a)-[:R]->(b)`) sono intuitivi per i traversal, meno per le aggregazioni (Q02, classifica: l'`UNION ALL` SQL diventa un `UNWIND` su una lista di mappe) |")
+    md.append("| Pitfall incontrati | Tipizzazione rigida: colonne pandas integer-con-NaN rifiutate (Challenge 2) | Semantica di `NULL` (`NULL = NULL` e' null: Q05 richiedeva un `IS NOT NULL` esplicito per equivalere al self-join SQL); direzionalita' di `PLAYED_FOR` (6 hop = `*..12` archi); `shortestPath` non esprime predicati fra archi consecutivi |")
+    md.append("")
+    md.append("Tre osservazioni:\n")
+    md.append("1. **Lo schema esplicito e' un costo iniziale che si ripaga come rete di "
+              "sicurezza.** Le 273 righe di DDL di Postgres sono sembrate overhead "
+              "finche' il vincolo FK ha intercettato un difetto reale del dataset che "
+              "il modello a grafo avrebbe assorbito silenziosamente. In un progetto "
+              "data-intensive, *fallire presto* e' una feature.\n")
+    md.append("2. **Scrivere query e' piu' facile in Cypher, caricare dati e' piu' facile "
+              "in SQL.** Un pattern come "
+              "`(:Team {name:'Milan'})<-[:PLAYED_FOR]-(p)-[:PLAYED_FOR]->(:Team {name:'Juventus'})` "
+              "sostituisce quattro join; ma il bulk load ha richiesto +60% di codice "
+              "e un plugin, e l'assenza di tipi sui property ha spostato la validazione "
+              "sull'ETL.\n")
+    md.append("3. **La semantica implicita di Cypher e' la fonte principale di errori "
+              "sottili.** Tutti e tre i pitfall Cypher (NULL, direzionalita', "
+              "predicati di path) sono emersi solo grazie alla verifica automatica di "
+              "equivalenza dei risultati: senza un oracolo relazionale accanto, sarebbero "
+              "rimasti invisibili. E' un argomento a favore di mantenere entrambi i "
+              "sistemi durante lo sviluppo, anche quando la produzione ne usera' uno solo.\n")
+    md.append("**Suitability per il dominio**: il dataset calcistico e' *misto*: le "
+              "anagrafiche, le classifiche e le statistiche per stagione sono "
+              "relazionali; le reti di compagni di squadra e le catene di trasferimenti "
+              "sono grafi. Nessuno dei due modelli e' \"naturale\" per l'intero dominio, "
+              "il che rende il caso di studio adatto a un confronto — e la persistenza "
+              "poliglotta (sez. 13) la risposta pragmatica.\n")
+
+    # --- Scalabilita' ---
+    md.append("\n## 12. Considerazioni sulla scalabilita'\n")
+    md.append("Il benchmark e' single-node e single-user (8 GB di RAM, working set "
+              "interamente in cache: nessun piano contiene `shared read`). Non misura "
+              "la scalabilita', ma i piani catturati permettono di **ragionare su come "
+              "i costi crescono** con i dati, e l'architettura dei due sistemi su come "
+              "si distribuiscono.\n")
+    md.append("### Crescita dei dati su un singolo nodo\n")
+    md.append("- **Aggregazioni full-scan (Q07)**: il piano Postgres ordina 542.281 righe "
+              "(`external merge`, 18 MB); il costo e' O(n log n) nel numero di righe di "
+              "formazione. A 10x (80 stagioni) lo spill crescerebbe in proporzione, ma "
+              "il rimedio e' standard: partizionamento dichiarativo per `season` e "
+              "`work_mem` dimensionato. Neo4j aggrega le stesse relazioni in modo "
+              "lineare, ma **senza meccanismo di spill**: il grafo deve stare nella "
+              "pagecache, altrimenti il degrado e' brusco.\n")
+    md.append("- **Traversal a profondita' variabile (Q10)**: la CTE ricorsiva "
+              "materializza l'intera frontiera BFS — 44.251 stati e 2.977.128 accessi "
+              "al buffer per profondita' <= 6 — un costo che cresce con la dimensione del "
+              "grafo *e* esponenzialmente con la profondita'. `shortestPath()` (BFS "
+              "bidirezionale) tocca 237 db hits: il lavoro dipende dalla lunghezza del "
+              "cammino e dal grado dei nodi attraversati, **non dalla dimensione totale "
+              "del grafo**. E' l'index-free adjacency letta come proprieta' di scaling: "
+              "il 89x osservato non e' un artefatto della taglia del dataset ma tende "
+              "ad *allargarsi* al crescere dei dati.\n")
+    md.append("- **Scritture (Q11/Q12)**: in Postgres ogni `UPDATE` crea nuove versioni "
+              "di tupla (MVCC) da ripulire con `VACUUM`; in Neo4j la scrittura passa dal "
+              "transaction log. Entrambi i sistemi sono stati misurati con un solo "
+              "writer: sotto scrittori concorrenti entrano in gioco lock a livello di "
+              "riga (Postgres) e di nodo/relazione (Neo4j), non testati.\n")
+    md.append("### Scaling orizzontale\n")
+    md.append("- **PostgreSQL**: la replica in streaming scala le *letture* senza "
+              "toccare le query (l'intero benchmark read girerebbe invariato su una "
+              "replica). Lo sharding dei *dati* (Citus) richiede una chiave di "
+              "distribuzione; i join multi-hop di Q09/Q10 fra shard diversi diventano "
+              "join di rete e degradano.\n")
+    md.append("- **Neo4j**: il causal cluster replica l'**intero grafo** su ogni core "
+              "member — scala le letture, non i dati. Il partizionamento reale "
+              "(Fabric / composite database) e' manuale, e un traversal che attraversa "
+              "una partizione perde l'index-free adjacency. E' il limite noto dei graph "
+              "database: il partizionamento di un grafo minimizzando gli archi tagliati "
+              "e' un problema NP-hard, e la proprieta' che rende Q10 89x piu' veloce su "
+              "un nodo e' esattamente quella che **non si distribuisce gratis**.\n")
+    md.append("### Verdetto\n")
+    md.append("A 10x i dati (80 stagioni, ~5M formazioni, ~9M eventi) entrambi i sistemi "
+              "restano su un nodo con accorgimenti ordinari (partizionamento e "
+              "`work_mem` per Postgres, pagecache dimensionata per Neo4j) e i rapporti "
+              "osservati si conservano o si accentuano a favore di Neo4j sui traversal. "
+              "Oltre la memoria di una singola macchina, il workload OLAP scala meglio "
+              "in Postgres (Citus, storage colonnare); il workload a grafo scala in "
+              "Neo4j solo finche' il grafo e' replicabile per intero. La "
+              "misura di questi regimi e' il lavoro futuro piu' rilevante (sez. 16).\n")
+
     # --- Conclusioni ---
     q10_speedup = pg_medians[qids.index("Q10")] / ne_medians[qids.index("Q10")] if "Q10" in qids else 0
     q07_speedup = pg_medians[qids.index("Q07")] / ne_medians[qids.index("Q07")] if "Q07" in qids else 0
     q12_pg = pg_medians[qids.index("Q12")] if "Q12" in qids else 0
     q12_ne = ne_medians[qids.index("Q12")] if "Q12" in qids else 0
 
-    md.append("\n## 11. Conclusioni\n")
+    md.append("\n## 13. Conclusioni\n")
     md.append("Sei risultati emersi dai dati:\n")
 
     md.append(f"\n1. **Postgres domina sulle aggregazioni OLAP-light** (categoria A): "
@@ -606,10 +703,13 @@ def main():
               "variabile (raccomandazione, fraud detection, supply chain), schema "
               "evolution frequente.\n")
     md.append("- **Polyglot persistence**: in produzione i due DB spesso coesistono, "
-              "ciascuno gestendo la parte del dominio per cui e' nato.\n")
+              "ciascuno gestendo la parte del dominio per cui e' nato. L'analisi di "
+              "ease-of-use (sez. 11) aggiunge un argomento operativo: tenere il modello "
+              "relazionale accanto a quello a grafo durante lo sviluppo intercetta "
+              "errori di dati e di semantica che il grafo da solo assorbe in silenzio.\n")
 
     # --- Threats to validity ---
-    md.append("\n## 12. Threats to validity\n")
+    md.append("\n## 14. Threats to validity\n")
 
     md.append("\n### Validita' interna\n")
     md.append("- **Warm-up e caching**: la prima esecuzione di ogni query viene "
@@ -657,7 +757,7 @@ def main():
               "ai risultati. Questo previene il cherry-picking.\n")
 
     # --- Note metodologiche ---
-    md.append("\n## 13. Note metodologiche\n")
+    md.append("\n## 15. Note metodologiche\n")
     md.append("- I tempi riportati sono **mediani**; min, max, IQR e 95% CI sono in `summary.csv`.\n")
     md.append("- La significativita' statistica e' valutata con il test di **Mann-Whitney U** "
               "(non parametrico, two-sided, alpha = 0.05), con effect size "
@@ -673,18 +773,19 @@ def main():
               "automaticamente dall'harness e salvati in `plans/`.\n")
 
     # --- Limitations ---
-    md.append("\n## 14. Limitations e lavoro futuro\n")
+    md.append("\n## 16. Limitations e lavoro futuro\n")
     md.append("Restano fuori dallo scope di questo lavoro:\n")
     md.append("- Carico **concorrente** (write contention, lock, MVCC vs lock-free traversal).\n")
     md.append("- Carico **OLTP intensivo** (insert rate, transazioni distribuite).\n")
-    md.append("- Scaling **orizzontale** (sharding Postgres con Citus vs Neo4j Fabric).\n")
+    md.append("- Scaling **orizzontale** (sharding Postgres con Citus vs Neo4j Fabric): "
+              "discusso qualitativamente in sez. 12, non misurato.\n")
     md.append("- Benchmark **standardizzati** su dataset grafo (LDBC Social Network Benchmark).\n")
     md.append("- **Tuning sistematico** dei sistemi: esplorato solo `work_mem` su Q07 "
               "(sez. 10); resta fuori un grid completo (shared_buffers, pagecache, "
               "parallelismo).\n")
 
     # --- Riferimenti ---
-    md.append("\n## 15. Riferimenti\n")
+    md.append("\n## 17. Riferimenti\n")
     md.append("- Angles, R., Gutierrez, C. (2008). *Survey of Graph Database Models*. "
               "ACM Computing Surveys, 40(1).\n")
     md.append("- Vicknair, C. et al. (2010). *A Comparison of a Graph Database and a "

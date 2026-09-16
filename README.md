@@ -31,6 +31,8 @@ L'analisi misura, su **12 query parametrizzate** equivalenti nelle due tecnologi
   significativita' statistica via Mann-Whitney U),
 - **espressività** (LOC + cognitive verbosity con consume-on-match counting),
 - **flessibilità** (schema evolution: ALTER+UPDATE in SQL vs SET in Cypher),
+- **ease-of-use** (proxy oggettivi: LOC della pipeline, dipendenze, DDL,
+  pitfall documentati) e **scalabilità** (ragionata sui query plan),
 
 più una verifica automatica di **correttezza** (i risultati coincidono nei due sistemi),
 un **index ablation benchmark** a matrice (7 coppie indice x query), e la cattura
@@ -87,7 +89,7 @@ due giocatori (Messi → Pirlo): **8 ms su Neo4j contro 712 ms su Postgres**
 ├── reports/                      # Output finali
 │   ├── dataset_exploration.md
 │   ├── engineering_challenges.md #  storia delle 3 sfide ingegneristiche risolte
-│   ├── benchmark_report.md       #  report completo (15 sezioni, threats to validity)
+│   ├── benchmark_report.md       #  report completo (17 sezioni: perf, plans, ease-of-use, scalabilita', threats)
 │   └── figures/*.png             #  6 grafici: perf, category, speedup, distributions, loc, verbosity
 ├── tests/                        # Test unitari dell'harness (pytest)
 ├── Makefile                      # Entry-point unico: make benchmark / report / test
@@ -127,7 +129,8 @@ distribuzioni). Un'analisi di sensibilita' su `work_mem` esclude che il gap
 di Q07 sia un artefatto di tuning (sez. 10 del report).
 
 Vedere `reports/benchmark_report.md` per il report completo con intervalli di
-confidenza, query plan, configurazione dei DBMS, threats to validity, e bibliografia.
+confidenza, query plan, configurazione dei DBMS, analisi di ease-of-use
+(sez. 11) e di scalabilita' (sez. 12), threats to validity, e bibliografia.
 
 ## Come riprodurre
 
