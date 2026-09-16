@@ -37,9 +37,13 @@ crescente, piu' una di scrittura (D):
   confronto sarebbe asimmetrico (Neo4j attraverserebbe una struttura
   precomputata mentre Postgres la ricostruirebbe ad ogni esecuzione).
 - **Q10**: in SQL la BFS ricorsiva limita la profondita' a 6 hop player-player
-  (`WHERE b.distance < 6`). In Cypher il pattern e' `[:PLAYED_FOR*..12]`
-  perche' `PLAYED_FOR` e' direzionale e ogni hop player-player attraversa
-  2 archi (Player→Team→Player), quindi 12 archi = 6 hop player-player.
+  (`WHERE b.distance < 6`) e collega due giocatori solo se compagni **nella
+  stessa stagione** (`pf2.season = pf1.season`). In Cypher un hop e' il
+  gruppo `(x)-[r1:PLAYED_FOR]->(Team)<-[r2:PLAYED_FOR]-(y) WHERE r1.season =
+  r2.season`, ripetuto `{1,6}` volte dentro un quantified path pattern con
+  `SHORTEST 1`. La formulazione legacy `shortestPath((a)-[:PLAYED_FOR*..12]-(b))`
+  **non** vincola la stagione fra archi consecutivi e da' risposte diverse dal
+  SQL (es. Ibrahimovic → Neuer: 2 hop invece di 3): vedere il report, sez. 10.2.
 - **Q05**: la versione Cypher include un guard `IS NOT NULL` su
   `sourceEventId` per allinearsi al comportamento di SQL che fa self-join
   sulla stessa riga di `match_event` (in Cypher `NULL = NULL` valuta a

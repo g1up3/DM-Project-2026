@@ -35,6 +35,8 @@ Open `queries/sql/Q10_shortest_path_between_players.sql` in the editor
 beside the terminal. Scroll through it briefly.
 
 > "In SQL, this is a recursive CTE doing a breadth-first search up to depth 6.
+>  Two players are linked only if they wore the same shirt **in the same
+>  season** — that's the `pf2.season = pf1.season` join condition.
 >  Twenty-one lines of code, twenty-six logical operators."
 
 Switch to the psql terminal and run:
@@ -43,9 +45,9 @@ Switch to the psql terminal and run:
 \i queries/demo/Q10_shortest_path.sql
 ```
 
-Expected: ~700-760 ms, single result row showing the hop count (**2**).
+Expected: ~750-850 ms, single result row showing the hop count (**2**).
 
-> "About seven hundred milliseconds, two hops between them."
+> "About eight hundred milliseconds, two hops between them."
 
 ### 1B — Show the Neo4j version (30 s)
 
@@ -56,20 +58,29 @@ Switch to **Neo4j Browser**. Paste:
 :param player_b => 'Andrea Pirlo';
 
 MATCH (a:Player {name: $player_a}), (b:Player {name: $player_b})
-MATCH path = shortestPath((a)-[:PLAYED_FOR*..12]-(b))
+MATCH path = SHORTEST 1 (a)
+  ((x:Player)-[r1:PLAYED_FOR]->(:Team)<-[r2:PLAYED_FOR]-(y:Player) WHERE r1.season = r2.season){1,6}
+  (b)
 RETURN length(path) / 2 AS hops;
 ```
 
 Run.
 
-> "Same answer. **Two hops**. But look at the time."
+> "Same answer. **Two hops**. Notice the `WHERE r1.season = r2.season`
+>  *inside* the repeated group: that is the SQL join condition, written as a
+>  pattern. Same semantics, guaranteed. Now look at the time."
 
 Point at the *Started streaming N records after X ms* line at the bottom of
 the result panel.
 
-> "**Eight milliseconds.** Same data, same question, same answer.
->  **Almost ninety times faster**, **three lines** of code instead of twenty-one,
->  **three operators** instead of twenty-six."
+> "**About twelve milliseconds.** Same data, same question, same answer.
+>  **Almost seventy times faster**, **five lines** of code instead of twenty-one,
+>  **five operators** instead of twenty-six."
+
+If asked *"why not the classic `shortestPath()`?"*: it doesn't constrain the
+season between consecutive edges — on Ibrahimović → Neuer it answers 2 hops
+where the true teammate distance is 3. We found it, measured it, fixed it
+(report, section 10.2).
 
 ### 1C — Visualise the actual path (30 s)
 
@@ -77,7 +88,9 @@ To make it visual, run:
 
 ```cypher
 MATCH (a:Player {name: 'Lionel Messi'}), (b:Player {name: 'Andrea Pirlo'})
-MATCH path = shortestPath((a)-[:PLAYED_FOR*..12]-(b))
+MATCH path = SHORTEST 1 (a)
+  ((x:Player)-[r1:PLAYED_FOR]->(:Team)<-[r2:PLAYED_FOR]-(y:Player) WHERE r1.season = r2.season){1,6}
+  (b)
 RETURN path;
 ```
 
@@ -92,29 +105,37 @@ teams connecting Messi to Pirlo through one or two intermediaries.
 
 ## Act 2 — Where Postgres wins (~45 s)
 
-> "It is not always Neo4j's game. Let me show you a query where Postgres
->  flips the result."
+> "It is not always Neo4j's game. Let me show you a *graph* query where
+>  Postgres flips the result: the teammates-of-teammates of Messi — two hops,
+>  but a **fixed** depth."
 
 Switch to psql:
 
 ```sql
-\i queries/demo/Q02_league_standings.sql
+\i queries/demo/Q09_two_hop_teammates.sql
 ```
 
-Expected: ~7 ms.
+Expected: ~35-40 ms (first run after idle may take ~100 ms — that's why we
+pre-warm), 20 rows.
 
-> "About seven milliseconds. Twenty teams of Serie A 2015/16 with full standings —
->  points, goals for, goals against."
+> "Under forty milliseconds. Twenty players, ranked by how many shared
+>  team-seasons connect them to Messi."
 
 Switch to Neo4j Browser and run the equivalent Cypher (paste from
-`queries/cypher/Q02_league_standings.cypher`).
+`queries/cypher/Q09_two_hop_teammates.cypher`, with
+`:param player_name => 'Lionel Messi'; :param top_n => 20;`).
 
-> "Around nine. Postgres wins — classical OLAP territory. Small margin, but
->  statistically significant over fifteen runs."
+> "Around seventy. Postgres wins by almost two to one — and it's one of the
+>  most stable results we have: effect size 0.87, same winner in every run."
 
-> "This is the lesson: classical OLAP-style aggregations are exactly what
->  PostgreSQL has been optimised to do for thirty years. The graph paradigm
->  has nothing to add here — and it shows."
+> "Why? Because we gave Postgres a fair fight: `mv_played_for` is a
+>  materialized view that precomputes exactly the `PLAYED_FOR` relationship
+>  Neo4j builds at load time. With the same precomputation, a fixed two-hop
+>  join on B-tree indexes beats the traversal. The graph advantage is not
+>  'hops' — it's *variable-depth* search, like the shortest path we just saw."
+
+(Do **not** use Q02 for this act: at ~5 ms on both engines it is inside the
+noise band and the winner changes between runs — report, section 10.3.)
 
 ---
 
@@ -134,7 +155,7 @@ UPDATE soccer.match SET total_goals = home_team_goal + away_team_goal;
 
 > "Two statements. ALTER TABLE took the lock, UPDATE backfilled the column."
 
-Show the timing — ~440 ms across both (benchmark median).
+Show the timing — ~400 ms across both (benchmark median).
 
 > "Cleanup..."
 
@@ -210,5 +231,5 @@ returning a path that you've seen on slide 11 — let's continue"* and move
 on. Do not let any demo issue eat more than 30 seconds of stage time.
 
 **Ultimate fallback**: the numbers are all in `reports/benchmark_report.md`
-(section 2) and the query plans in `benchmark/results/run_20260524_230038/plans/`
+(section 2) and the query plans in `benchmark/results/run_20260916_183215/plans/`
 — if a database is down, show the captured plan instead of running live.

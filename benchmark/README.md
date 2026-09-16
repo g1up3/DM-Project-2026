@@ -13,6 +13,7 @@ benchmark/
   verbosity.py          # calcolo LOC + cognitive verbosity (keyword list simmetrica)
   index_ablation.py     # matrice (indice, query): drop -> misura -> restore
   sensitivity_q07.py    # analisi di sensibilita': work_mem e lo spill di Q07
+  sensitivity_q10.py    # analisi di sensibilita': semantica dello shortest path (Q10)
   generate_report.py    # produce il report Markdown + 6 grafici PNG
   results/              # output di ogni run (timestamped)
   results/index_ablation/  # output dell'esperimento di index ablation
@@ -71,11 +72,22 @@ l'indice sia tornato). Output:
 per fase e lo slowdown. Mostra quali indici dello schema sono decorativi e
 quali no.
 
-## Analisi di sensibilita' (work_mem su Q07)
+## Analisi di sensibilita'
 
 ```bash
-python3 benchmark/sensitivity_q07.py           # default: 4MB vs 64MB, 15 run
+python3 benchmark/sensitivity_q07.py           # work_mem: 4MB vs 64MB, 15 run
+python3 benchmark/sensitivity_q10.py           # semantica Q10: 3 varianti + 8 coppie, timeout 20 s
 ```
+
+`sensitivity_q10.py` confronta tre formulazioni Cypher dello shortest path
+(legacy `shortestPath` senza vincolo di stagione, `shortestPath` con predicato
+di path, quantified path pattern + `SHORTEST 1`) sulla coppia di riferimento e
+verifica su 8 coppie di giocatori quale coincide con la BFS SQL. Ogni query
+Cypher gira con timeout server-side: la variante con predicato di path ha un
+fallback esaustivo che puo' saturare la macchina, e viene misurata solo sulla
+coppia sicura. Il report include automaticamente l'ultimo risultato (sez. 10.2).
+
+### work_mem su Q07
 
 Il piano di Q07 contiene l'unico spill su disco dell'intero benchmark
 (sort external merge, ~18 MB). Lo script riesegue Q07 su Postgres con valori
@@ -109,6 +121,11 @@ della presentazione (le figure sono in PNG ad alta risoluzione, 140 dpi).
 ## Metodologia
 
 Per ciascuna query e ciascun sistema:
+0. **Stato pulito**: `VACUUM (ANALYZE)` sulle tabelle Postgres coinvolte
+   prima delle misure. Le write query Q11/Q12 vengono rolled back, ma in
+   Postgres il rollback lascia le versioni di tupla morte (MVCC): senza
+   VACUUM ogni run degrada le letture del run successivo finche' l'autovacuum
+   non interviene (report, sez. 10.3). Registrato in `run_metadata.json`.
 1. **Warm-up**: una prima esecuzione viene scartata (riempie le cache dei
    piani di esecuzione e il buffer dei dati).
 2. **N esecuzioni misurate** (default 15).
