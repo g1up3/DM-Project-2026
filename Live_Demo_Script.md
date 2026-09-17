@@ -45,9 +45,9 @@ Switch to the psql terminal and run:
 \i queries/demo/Q10_shortest_path.sql
 ```
 
-Expected: ~750-850 ms, single result row showing the hop count (**2**).
+Expected: ~650-800 ms, single result row showing the hop count (**2**).
 
-> "About eight hundred milliseconds, two hops between them."
+> "About seven hundred milliseconds, two hops between them."
 
 ### 1B — Show the Neo4j version (30 s)
 
@@ -74,7 +74,7 @@ Point at the *Started streaming N records after X ms* line at the bottom of
 the result panel.
 
 > "**About twelve milliseconds.** Same data, same question, same answer.
->  **Almost seventy times faster**, **five lines** of code instead of twenty-one,
+>  **Over fifty times faster**, **five lines** of code instead of twenty-one,
 >  **five operators** instead of twenty-six."
 
 If asked *"why not the classic `shortestPath()`?"*: it doesn't constrain the
@@ -126,7 +126,8 @@ Switch to Neo4j Browser and run the equivalent Cypher (paste from
 `:param player_name => 'Lionel Messi'; :param top_n => 20;`).
 
 > "Around seventy. Postgres wins by almost two to one — and it's one of the
->  most stable results we have: effect size 0.87, same winner in every run."
+>  most stable results we have: effect size 1.0, same winner in every run —
+>  and the lead widens as the data grows."
 
 > "Why? Because we gave Postgres a fair fight: `mv_played_for` is a
 >  materialized view that precomputes exactly the `PLAYED_FOR` relationship
@@ -155,7 +156,7 @@ UPDATE soccer.match SET total_goals = home_team_goal + away_team_goal;
 
 > "Two statements. ALTER TABLE took the lock, UPDATE backfilled the column."
 
-Show the timing — ~400 ms across both (benchmark median).
+Show the timing — ~350 ms across both statements (benchmark median, commit included).
 
 > "Cleanup..."
 
@@ -170,7 +171,7 @@ MATCH (m:Match)
 SET   m.totalGoals = m.homeGoals + m.awayGoals;
 ```
 
-> "**One statement, about thirty milliseconds.** No DDL. No migration step. Just SET the property —
+> "**One statement, under a hundred milliseconds with the commit.** No DDL. No migration step. Just SET the property —
 >  same logical operation, same semantics, but the schema is *implicit*.
 >  This is the trade-off NoSQL was designed for: **flexibility is part of
 >  the data model**, not a separate concern."
@@ -231,5 +232,5 @@ returning a path that you've seen on slide 11 — let's continue"* and move
 on. Do not let any demo issue eat more than 30 seconds of stage time.
 
 **Ultimate fallback**: the numbers are all in `reports/benchmark_report.md`
-(section 2) and the query plans in `benchmark/results/run_20260916_183215/plans/`
+(section 2) and the query plans in `benchmark/results/run_20260917_161535/plans/`
 — if a database is down, show the captured plan instead of running live.

@@ -56,7 +56,9 @@ total volume (917k events).
 
 ### Result
 
-After the fix:
+After the fix (the denominators are the events that *have* a player1 / player2
+reference — 852,683 and 206,945 respectively — not the 917,815 total events;
+the 4,632 + 1,021 nullified references are no longer counted):
 ```
 match_event -> Player (player1)  : 0 orphans / 852,683
 match_event -> Player (player2)  : 0 orphans /  206,945

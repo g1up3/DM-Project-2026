@@ -44,6 +44,32 @@ Convenzioni:
 | `(:PlayerStats)-[:STATS_OF]->(:Player)` | — | snapshot collegato al giocatore |
 | `(:TeamStats)-[:STATS_OF]->(:Team)` | — | snapshot collegato alla squadra |
 
+## Mappatura dal modello concettuale
+
+Il modello concettuale (`conceptual_er.md`) ha un'entità `MatchEvent` con
+relazioni *generiche* `OF_MATCH`, `BY_TEAM`, `BY_PLAYER` (player1) e
+`WITH_PLAYER` (player2). Lo schema a grafo **non la implementa alla lettera**:
+l'evento non è un nodo ma viene *specializzato per tipo* in relazioni
+dirette giocatore→partita, perché è così che le query lo attraversano:
+
+| Concettuale | Grafo | Note |
+|---|---|---|
+| `MatchEvent(type='goal') BY_PLAYER Player` | `(Player)-[:SCORED_IN]->(Match)` | `OF_MATCH` diventa il nodo di arrivo; `BY_TEAM` la proprietà `teamApiId` |
+| `MatchEvent(type='goal') WITH_PLAYER Player` | `(Player)-[:ASSISTED_IN]->(Match)` | riaccoppiata a `SCORED_IN` via `sourceEventId` (Q05) |
+| `MatchEvent(type='card') BY_PLAYER Player` | `(Player)-[:RECEIVED_CARD_IN]->(Match)` | `cardType`, `minute` come proprietà |
+| `MatchEvent(type='foulcommit') BY_PLAYER / WITH_PLAYER` | `(Player)-[:COMMITTED_FOUL_IN {victimPlayerId}]->(Match)` | il "player2" (vittima) è una proprietà |
+| `MatchEvent(type in shoton, shotoff, cross, corner, possession)` | **non caricati** | nessuna delle 12 query li usa (scelta di scope) |
+
+Trade-off della specializzazione: i traversal per tipo di evento sono
+immediati (Q01, Q06: nessun filtro su `event_type`), ma un evento *ternario*
+come il gol con assist viene spezzato in due archi che vanno riaccoppiati per
+valore (`sourceEventId`): la modellazione alternativa con un nodo
+`(:MatchEvent)` collegato a marcatore, assistman e partita renderebbe Q05 una
+pura navigazione di vicinato, al prezzo di un hop in più in ogni query sui
+gol. Analogamente, `season` come proprietà di `PLAYED_FOR` (invece di un nodo
+`TeamSeason`) rende il vincolo di stagione un predicato da ricordare in ogni
+traversal (vedere il report, sez. 10.2).
+
 ## Vincoli e indici (Cypher)
 
 ```cypher

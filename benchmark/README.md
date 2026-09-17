@@ -14,6 +14,7 @@ benchmark/
   index_ablation.py     # matrice (indice, query): drop -> misura -> restore
   sensitivity_q07.py    # analisi di sensibilita': work_mem e lo spill di Q07
   sensitivity_q10.py    # analisi di sensibilita': semantica dello shortest path (Q10)
+  sensitivity_scale.py  # scalabilita' misurata: Q07/Q09 su 2, 4, 8 stagioni
   generate_report.py    # produce il report Markdown + 6 grafici PNG
   results/              # output di ogni run (timestamped)
   results/index_ablation/  # output dell'esperimento di index ablation
@@ -77,6 +78,7 @@ quali no.
 ```bash
 python3 benchmark/sensitivity_q07.py           # work_mem: 4MB vs 64MB, 15 run
 python3 benchmark/sensitivity_q10.py           # semantica Q10: 3 varianti + 8 coppie, timeout 20 s
+python3 benchmark/sensitivity_scale.py         # Q07 e Q09 su 2/4/8 stagioni, 10 run per cella
 ```
 
 `sensitivity_q10.py` confronta tre formulazioni Cypher dello shortest path
@@ -89,12 +91,14 @@ coppia sicura. Il report include automaticamente l'ultimo risultato (sez. 10.2).
 
 ### work_mem su Q07
 
-Il piano di Q07 contiene l'unico spill su disco dell'intero benchmark
-(sort external merge, ~18 MB). Lo script riesegue Q07 su Postgres con valori
-crescenti di `work_mem` (a livello di sessione) e registra mediana, CI e il
-Sort Method estratto da `EXPLAIN ANALYZE`. Il report include automaticamente
-l'ultimo risultato (sez. 10) per decomporre effetto-tuning da
-effetto-paradigma.
+Nella formulazione originale (`GROUP BY player_name`) il piano di Q07
+conteneva l'unico spill su disco del benchmark (sort external merge, ~18 MB).
+Lo script riesegue Q07 su Postgres con valori crescenti di `work_mem` e
+registra mediana, CI e il Sort Method estratto da `EXPLAIN ANALYZE`: lo spill
+non spostava la mediana. La causa vera era il raggruppamento per nome (testo
+con collation, 163 omonimi): raggruppando per `player_api_id` il planner usa un
+Incremental Sort sull'indice e Q07 scende da ~1.2 s a ~0.4 s (report, sez. 10.1).
+Il report usa il primo file JSON (formulazione originale) come evidenza storica.
 
 ## Generazione del report
 
@@ -122,8 +126,8 @@ della presentazione (le figure sono in PNG ad alta risoluzione, 140 dpi).
 
 Per ciascuna query e ciascun sistema:
 0. **Stato pulito**: `VACUUM (ANALYZE)` sulle tabelle Postgres coinvolte
-   prima delle misure. Le write query Q11/Q12 vengono rolled back, ma in
-   Postgres il rollback lascia le versioni di tupla morte (MVCC): senza
+   prima delle misure. Le write query Q11/Q12 creano in Postgres versioni di
+   tupla morte (MVCC) che ne' il rollback ne' il cleanup rimuovono: senza
    VACUUM ogni run degrada le letture del run successivo finche' l'autovacuum
    non interviene (report, sez. 10.3). Registrato in `run_metadata.json`.
 1. **Warm-up**: una prima esecuzione viene scartata (riempie le cache dei
@@ -140,11 +144,15 @@ Per ciascuna query e ciascun sistema:
    BUFFERS)` su Postgres e `PROFILE` su Neo4j, salvati in `plans/`.
 7. **Verifica risultati**: i set di tuple restituiti dai due sistemi vengono
    normalizzati (cast di Decimal/float, arrotondamento a 4 decimali, cast
-   di date a stringa) e confrontati come `set`. Se differiscono, il report
-   lo segnala esplicitamente.
-8. **Query di scrittura (Q11/Q12)**: eseguite in transazione esplicita e
-   rolled-back dopo ogni run, in modo che ogni misurazione lavori su stato
-   pulito e nessuna modifica resti persistente.
+   di date a stringa) e confrontati come **multiset** (stesse tuple, stessa
+   molteplicita'). Se differiscono, il report lo segnala esplicitamente.
+8. **Query di scrittura (Q11/Q12)**: misurate **fino al COMMIT** (Postgres:
+   flush del WAL; Neo4j: applicazione allo store e transaction log), poi un
+   cleanup non misurato riporta lo stato iniziale (Q11 e' idempotente, Q12
+   rimuove colonna/proprieta'). Il numero di righe/proprieta' modificate e'
+   letto dai driver e confrontato fra i due sistemi. `--write-mode rollback`
+   riproduce il metodo storico, che sottostima Neo4j (le mutazioni restano in
+   memoria fino al commit: Q12 risultava 11x invece di 4.5x).
 
 ## Categorie delle query
 

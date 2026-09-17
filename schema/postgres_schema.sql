@@ -247,7 +247,7 @@ GROUP BY r.season, t.team_api_id, t.team_long_name;
 --  Replica esatta della relazione derivata :PLAYED_FOR in Neo4j (calcolata
 --  in fase di load via aggregazione di LINEUP_OF — vedere load_neo4j.py:218).
 --
---  Senza questa MV il benchmark sarebbe asimmetrico: Q08/Q09/Q10 in Cypher
+--  Senza questa MV il benchmark sarebbe asimmetrico: Q09/Q10 in Cypher
 --  attraversano direttamente PLAYED_FOR (gia' materializzato), mentre in
 --  SQL dovrebbero ricostruirlo on-the-fly via CTE in ogni esecuzione.
 --  Materializzare in Postgres mette i due sistemi sullo stesso piano in
