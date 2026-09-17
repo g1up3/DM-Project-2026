@@ -27,4 +27,12 @@ def test_order_is_irrelevant_but_content_is_not():
 
 
 def test_none_preserved():
-    assert normalize_rows([(None, 1)]) == {(None, 1)}
+    assert normalize_rows([(None, 1)]) == {(None, 1): 1}
+
+
+def test_multiset_distinguishes_duplicate_rows():
+    # due omonimi con lo stesso punteggio: stesso set, multiset diverso
+    one = [("Mario Rossi", 8)]
+    two = [("Mario Rossi", 8), ("Mario Rossi", 8)]
+    assert set(normalize_rows(one)) == set(normalize_rows(two))
+    assert normalize_rows(one) != normalize_rows(two)

@@ -1,0 +1,27 @@
+{
+  "timestamp": "20260917_161535",
+  "runs": 15,
+  "n_queries": 12,
+  "statistical_method": "Mann-Whitney U (two-sided, alpha=0.05)",
+  "ci_method": "Bootstrap 95% CI of the median (10000 resamples, seed=42)",
+  "postgres_vacuum_before_run": {
+    "dead_tuples_before": {},
+    "vacuumed": [
+      "match_event",
+      "match",
+      "match_lineup",
+      "player"
+    ]
+  },
+  "write_mode": "commit",
+  "host": "192.168.1.55",
+  "platform": "macOS-27.0-arm64-arm-64bit",
+  "machine": "arm64",
+  "processor": "arm",
+  "python": "3.12.3",
+  "cpu_count": 8,
+  "cpu_model": "Apple M2",
+  "memory_gb": 8.0,
+  "postgres_version": "PostgreSQL 18.6 (Homebrew) on aarch64-apple-darwin25.6.0, compiled by Apple clang version 21.0.0 (clang-2100.1.1.101), 64-bit",
+  "neo4j_version": "Neo4j Kernel 2026.04.0 (enterprise)"
+}

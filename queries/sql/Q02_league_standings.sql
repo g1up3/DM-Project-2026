@@ -35,5 +35,5 @@ JOIN   soccer.team   t ON t.team_api_id = r.team_id
 JOIN   soccer.league l ON l.league_id   = r.league_id
 WHERE  r.season = %(season)s
   AND  l.name   = %(league_name)s
-GROUP  BY t.team_long_name
+GROUP  BY t.team_api_id, t.team_long_name   -- per id: 3 nomi di squadra sono duplicati (stesso nome, id diversi)
 ORDER  BY points DESC, goal_diff DESC, team;

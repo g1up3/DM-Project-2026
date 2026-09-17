@@ -1,0 +1,46 @@
+Limit  (cost=20395.27..20395.30 rows=10 width=32) (actual time=10.613..10.615 rows=10.00 loops=1)
+  Buffers: shared hit=4256
+  ->  Sort  (cost=20395.27..20408.19 rows=5166 width=32) (actual time=10.612..10.614 rows=10.00 loops=1)
+        Sort Key: scorers.goals DESC, scorers.player_name
+        Sort Method: top-N heapsort  Memory: 26kB
+        Buffers: shared hit=4256
+        ->  Subquery Scan on scorers  (cost=20180.32..20283.64 rows=5166 width=32) (actual time=10.292..10.481 rows=1699.00 loops=1)
+              Buffers: shared hit=4256
+              ->  HashAggregate  (cost=20180.32..20231.98 rows=5166 width=36) (actual time=10.292..10.415 rows=1699.00 loops=1)
+                    Group Key: p.player_api_id
+                    Batches: 1  Memory Usage: 281kB
+                    Buffers: shared hit=4256
+                    ->  Hash Join  (cost=5573.56..20154.49 rows=5166 width=28) (actual time=2.762..9.602 rows=6326.00 loops=1)
+                          Hash Cond: (e.player1_id = p.player_api_id)
+                          Buffers: shared hit=4256
+                          ->  Hash Join  (cost=5229.71..19797.08 rows=5166 width=14) (actual time=1.687..7.763 rows=6369.00 loops=1)
+                                Hash Cond: (e.match_api_id = m.match_api_id)
+                                Buffers: shared hit=4161
+                                ->  Bitmap Heap Scan on match_event e  (cost=605.16..15066.57 rows=40353 width=8) (actual time=0.979..4.474 rows=39980.00 loops=1)
+                                      Recheck Cond: ((event_type)::text = 'goal'::text)
+                                      Heap Blocks: exact=3967
+                                      Buffers: shared hit=4109
+                                      ->  Bitmap Index Scan on ix_event_type  (cost=0.00..595.07 rows=40353 width=0) (actual time=0.686..0.687 rows=39980.00 loops=1)
+                                            Index Cond: ((event_type)::text = 'goal'::text)
+                                            Index Searches: 1
+                                            Buffers: shared hit=142
+                                ->  Hash  (cost=4582.98..4582.98 rows=3326 width=14) (actual time=0.359..0.359 rows=3326.00 loops=1)
+                                      Buckets: 4096  Batches: 1  Memory Usage: 188kB
+                                      Buffers: shared hit=52
+                                      ->  Bitmap Heap Scan on match m  (cost=314.19..4582.98 rows=3326 width=14) (actual time=0.037..0.213 rows=3326.00 loops=1)
+                                            Recheck Cond: ((season)::text = '2015/2016'::text)
+                                            Heap Blocks: exact=44
+                                            Buffers: shared hit=52
+                                            ->  Bitmap Index Scan on ix_match_season  (cost=0.00..313.36 rows=3326 width=0) (actual time=0.032..0.032 rows=3326.00 loops=1)
+                                                  Index Cond: ((season)::text = '2015/2016'::text)
+                                                  Index Searches: 1
+                                                  Buffers: shared hit=8
+                          ->  Hash  (cost=205.60..205.60 rows=11060 width=18) (actual time=1.072..1.072 rows=11060.00 loops=1)
+                                Buckets: 16384  Batches: 1  Memory Usage: 675kB
+                                Buffers: shared hit=95
+                                ->  Seq Scan on player p  (cost=0.00..205.60 rows=11060 width=18) (actual time=0.003..0.436 rows=11060.00 loops=1)
+                                      Buffers: shared hit=95
+Planning:
+  Buffers: shared hit=25
+Planning Time: 0.196 ms
+Execution Time: 10.639 ms

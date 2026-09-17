@@ -16,7 +16,7 @@ crescente, piu' una di scrittura (D):
 | Q08 | C — Graph-native  | Teammates of X in a season         | 1 hop di traversal                                  |
 | Q09 | C — Graph-native  | "Friends of friends" 2-hop         | 2 hop con deduplicazione                            |
 | Q10 | C — Graph-native  | Shortest path between two players  | path search a profondità variabile (max 6 hop)      |
-| Q11 | D — Write         | Bulk UPDATE on event subtype       | mass-update workload (~40k righe)                   |
+| Q11 | D — Write         | Bulk UPDATE on event subtype       | mass-update workload (~21k righe)                   |
 | Q12 | D — Write         | Schema evolution: add totalGoals   | DDL+UPDATE in SQL vs single SET in Cypher           |
 
 ## Convenzioni
@@ -26,12 +26,16 @@ crescente, piu' una di scrittura (D):
 - I parametri sono definiti in `benchmark/queries.py` per ciascuna query.
 - Ogni query Q01-Q10 produce lo stesso result-set logico nei due sistemi
   (verificato da `benchmark/run_benchmark.py` come set di tuple normalizzate).
-- Le query write Q11/Q12 vengono eseguite e poi rolled-back: nessuna
-  modifica persistente sui DB durante il benchmark.
+  Le query che raggruppano usano le chiavi (`player_api_id`, `team_api_id`),
+  mai i nomi: il dataset ha 163 nomi di giocatore e 3 di squadra omonimi.
+- Le query write Q11/Q12 vengono misurate fino al `COMMIT` incluso e poi
+  riportate allo stato iniziale da un cleanup non misurato (Q11 e'
+  idempotente; Q12 rimuove colonna/proprieta'). L'harness verifica che il
+  numero di righe/proprieta' modificate coincida nei due sistemi.
 
 ## Note di equivalenza semantica
 
-- **Q08, Q09, Q10**: le versioni SQL usano la materialized view
+- **Q09, Q10**: le versioni SQL usano la materialized view
   `soccer.mv_played_for` (vedere `schema/postgres_schema.sql`), che replica
   esattamente la relazione derivata `:PLAYED_FOR` di Neo4j. Senza di essa il
   confronto sarebbe asimmetrico (Neo4j attraverserebbe una struttura
@@ -44,15 +48,20 @@ crescente, piu' una di scrittura (D):
   `SHORTEST 1`. La formulazione legacy `shortestPath((a)-[:PLAYED_FOR*..12]-(b))`
   **non** vincola la stagione fra archi consecutivi e da' risposte diverse dal
   SQL (es. Ibrahimovic → Neuer: 2 hop invece di 3): vedere il report, sez. 10.2.
-- **Q05**: la versione Cypher include un guard `IS NOT NULL` su
-  `sourceEventId` per allinearsi al comportamento di SQL che fa self-join
-  sulla stessa riga di `match_event` (in Cypher `NULL = NULL` valuta a
-  `null`, non `true`, e senza il guard si perderebbero le coppie con
-  `sourceEventId` orfano).
-- **Q11**: in Cypher si aggiornano le relazioni `SCORED_IN`, che non
-  esistono per i goal events con `player1_id` orfano (~0.5% del totale,
-  vedere `reports/engineering_challenges.md`). Documentato come differenza
-  voluta di scope tra le due rappresentazioni.
+- **Q05**: in SQL marcatore e assistman stanno sulla stessa riga di
+  `match_event`; in Cypher l'evento e' spezzato in due relazioni
+  (`SCORED_IN`, `ASSISTED_IN`) riaccoppiate tramite `sourceEventId`.
+  L'equivalenza poggia su un invariante dei dati, verificato: ogni gol ha un
+  `sourceEventId` non nullo e univoco (0 NULL, 0 duplicati). Il guard
+  `IS NOT NULL` rende l'assunzione esplicita; e' un limite noto della
+  modellazione a due archi rispetto a un nodo `:MatchEvent`.
+- **Q11**: il grafo materializza un gol come `SCORED_IN` solo se il marcatore
+  e' noto; 109 gol hanno `player1_id` annullato nell'ETL (riferimenti orfani)
+  e non hanno controparte in Neo4j. La versione SQL filtra
+  `player1_id IS NOT NULL` cosi' che i due workload tocchino le stesse 21.442
+  righe logiche (verificato da rowcount vs `properties_set`).
+- **Q07 / Q04**: raggruppano per `player_api_id` / `team_api_id`. Raggruppando
+  per nome, 14 "giocatori" di Q07 sarebbero omonimi fusi (550 vs 539 reali).
 
 ## Struttura
 

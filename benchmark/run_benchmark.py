@@ -40,6 +40,7 @@ import platform
 import statistics
 import subprocess
 import time
+from collections import Counter
 from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
@@ -170,11 +171,12 @@ def collect_db_config(pg_conn, neo_session) -> dict:
 def vacuum_postgres(conn) -> dict:
     """VACUUM (ANALYZE) delle tabelle dello schema prima delle misure.
 
-    Le query write Q11/Q12 vengono rolled back, ma in Postgres il rollback non
-    rimuove le versioni di tupla create dall'UPDATE (MVCC): ogni run lascia
-    ~40k tuple morte su match_event e ~26k su match, che degradano le letture
-    dei run successivi finche' l'autovacuum non interviene (vedere report,
-    sez. 10.3). Il VACUUM esplicito rende ogni run indipendente dalla storia.
+    Le query write Q11/Q12 (committate e ripulite, o rolled back nel metodo
+    storico) creano in Postgres nuove versioni di tupla (MVCC) che ne' il
+    rollback ne' il cleanup rimuovono: ogni run lascia ~21k tuple morte su
+    match_event e ~26k su match, che degradano le letture dei run successivi
+    finche' l'autovacuum non interviene (vedere report, sez. 10.3). Il VACUUM
+    esplicito rende ogni run indipendente dalla storia.
     """
     stats = {}
     old_autocommit = conn.autocommit
@@ -308,34 +310,70 @@ def _format_neo4j_plan(plan, lines: list, indent: int):
 #  Esecuzione
 # ---------------------------------------------------------------------------
 
-def run_pg(conn, sql: str, params: dict, is_write: bool = False) -> tuple[float, list[tuple]]:
+def run_pg(conn, sql: str, params: dict, is_write: bool = False,
+           write_mode: str = "commit", cleanup: str | None = None) -> tuple[float, list[tuple], int]:
+    """Esegue una query Postgres. Ritorna (ms, righe, righe_modificate).
+
+    Per le write: in modalita' 'commit' il timer include il COMMIT (WAL flush),
+    poi il cleanup riporta lo stato iniziale fuori dal timer; in modalita'
+    'rollback' (metodo storico) il timer copre solo l'esecuzione e la
+    transazione viene annullata.
+    """
     with conn.cursor() as cur:
         t0 = time.perf_counter()
         cur.execute(sql, params)
         rows = cur.fetchall() if cur.description else []
+        affected = cur.rowcount if is_write else 0
+        if is_write and write_mode == "commit":
+            conn.commit()
         t1 = time.perf_counter()
     if is_write:
-        conn.rollback()
-    return (t1 - t0) * 1000.0, rows
+        if write_mode != "commit":
+            conn.rollback()
+        elif cleanup:
+            with conn.cursor() as cur:
+                cur.execute(cleanup)
+            conn.commit()
+    return (t1 - t0) * 1000.0, rows, affected
 
 
-def run_neo4j(session, cypher: str, params: dict, is_write: bool = False) -> tuple[float, list[tuple]]:
+def run_neo4j(session, cypher: str, params: dict, is_write: bool = False,
+              write_mode: str = "commit", cleanup: str | None = None) -> tuple[float, list[tuple], int]:
+    """Esegue una query Neo4j. Ritorna (ms, righe, proprieta'_modificate).
+
+    Per le write il timer include, in modalita' 'commit', il tx.commit()
+    (validazione, store update, transaction log flush): in Neo4j le mutazioni
+    restano nello stato di transazione in memoria finche' non si committa,
+    quindi misurare solo tx.run() + rollback sottostimerebbe il costo reale.
+    """
     if is_write:
         tx = session.begin_transaction()
         t0 = time.perf_counter()
         result = tx.run(cypher, **params)
         rows = [tuple(r.values()) for r in result]
+        counters = result.consume().counters
+        if write_mode == "commit":
+            tx.commit()
         t1 = time.perf_counter()
-        tx.rollback()
-        return (t1 - t0) * 1000.0, rows
+        if write_mode != "commit":
+            tx.rollback()
+        elif cleanup:
+            session.run(cleanup).consume()
+        affected = (counters.properties_set + counters.nodes_created + counters.nodes_deleted
+                    + counters.relationships_created + counters.relationships_deleted)
+        return (t1 - t0) * 1000.0, rows, affected
     t0 = time.perf_counter()
     result = session.run(cypher, **params)
     rows = [tuple(r.values()) for r in result]
     t1 = time.perf_counter()
-    return (t1 - t0) * 1000.0, rows
+    return (t1 - t0) * 1000.0, rows, 0
 
 
-def normalize_rows(rows: list[tuple]) -> set:
+def normalize_rows(rows: list[tuple]) -> Counter:
+    """Normalizza le righe (Decimal/float a 4 decimali, date ISO) e le restituisce
+    come MULTISET (Counter): due result-set sono equivalenti solo se contengono
+    le stesse tuple con la stessa molteplicita'. Un confronto per set
+    nasconderebbe righe duplicate (es. due omonimi con lo stesso punteggio)."""
     out = []
     for r in rows:
         norm = []
@@ -352,7 +390,7 @@ def normalize_rows(rows: list[tuple]) -> set:
                 except (TypeError, ValueError):
                     norm.append(str(v))
         out.append(tuple(norm))
-    return set(out)
+    return Counter(out)
 
 
 # ---------------------------------------------------------------------------
@@ -433,19 +471,24 @@ def significance_test(pg_times: list[float], neo_times: list[float]) -> dict:
 # ---------------------------------------------------------------------------
 
 def run_one_query(q: QueryDef, pg_conn, neo_session, runs: int,
-                  plans_dir: Path) -> dict:
+                  plans_dir: Path, write_mode: str = "commit") -> dict:
     sql_text    = (SQL_DIR    / q.sql_file).read_text(encoding="utf-8")
     cypher_text = (CYPHER_DIR / q.cypher_file).read_text(encoding="utf-8")
     is_write    = q.category.startswith("D_")
 
     pg_times, neo_times = [], []
     pg_rows = neo_rows = None
+    pg_affected = neo_affected = 0
 
     print(f"\n--- {q.id}: {q.name}  [{q.category}] ---")
 
     for i in range(runs + 1):
-        t_pg, pg_rows = run_pg(pg_conn, sql_text, q.params, is_write=is_write)
-        t_neo, neo_rows = run_neo4j(neo_session, cypher_text, q.params, is_write=is_write)
+        t_pg, pg_rows, pg_affected = run_pg(
+            pg_conn, sql_text, q.params, is_write=is_write,
+            write_mode=write_mode, cleanup=q.cleanup_sql)
+        t_neo, neo_rows, neo_affected = run_neo4j(
+            neo_session, cypher_text, q.params, is_write=is_write,
+            write_mode=write_mode, cleanup=q.cleanup_cypher)
         if i == 0:
             print(f"  [warmup] pg={t_pg:.1f}ms  neo={t_neo:.1f}ms  (scartato)")
         else:
@@ -460,14 +503,21 @@ def run_one_query(q: QueryDef, pg_conn, neo_session, runs: int,
     (plans_dir / f"{q.id}_postgres.txt").write_text(pg_plan, encoding="utf-8")
     (plans_dir / f"{q.id}_neo4j.txt").write_text(neo_plan, encoding="utf-8")
 
-    # confronto risultati
-    pg_set  = normalize_rows(pg_rows or [])
-    neo_set = normalize_rows(neo_rows or [])
-    equal   = (pg_set == neo_set)
-    if not equal:
-        only_pg  = len(pg_set - neo_set)
-        only_neo = len(neo_set - pg_set)
-        print(f"  [WARN] risultati DIFFERENTI: solo-pg={only_pg}, solo-neo={only_neo}")
+    # confronto risultati: set di tuple per le read, righe/proprieta' modificate
+    # per le write (un UPDATE senza RETURNING non produce righe: confrontare
+    # due set vuoti direbbe sempre "uguale")
+    if is_write:
+        equal = (pg_affected == neo_affected)
+        print(f"  [write] righe modificate: pg={pg_affected}  neo={neo_affected}"
+              f"{'' if equal else '  [WARN] DIVERSE'}")
+    else:
+        pg_set  = normalize_rows(pg_rows or [])
+        neo_set = normalize_rows(neo_rows or [])
+        equal   = (pg_set == neo_set)
+        if not equal:
+            only_pg  = sum((pg_set - neo_set).values())
+            only_neo = sum((neo_set - pg_set).values())
+            print(f"  [WARN] risultati DIFFERENTI (multiset): solo-pg={only_pg}, solo-neo={only_neo}")
 
     # significativita'
     sig = significance_test(pg_times, neo_times)
@@ -479,8 +529,9 @@ def run_one_query(q: QueryDef, pg_conn, neo_session, runs: int,
         "query":      q,
         "pg_times":   pg_times,
         "neo_times":  neo_times,
-        "pg_n_rows":  len(pg_rows or []),
-        "neo_n_rows": len(neo_rows or []),
+        # per le write n_rows = righe/proprieta' modificate (verificate uguali)
+        "pg_n_rows":  pg_affected if is_write else len(pg_rows or []),
+        "neo_n_rows": neo_affected if is_write else len(neo_rows or []),
         "equal":      equal,
         "significance": sig,
     }
@@ -490,6 +541,10 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--runs", type=int, default=15,
                         help="Numero di esecuzioni misurate per query (default 15)")
+    parser.add_argument("--write-mode", choices=["commit", "rollback"], default="commit",
+                        help="Query write: 'commit' misura esecuzione + COMMIT e poi ripulisce "
+                             "(default); 'rollback' misura solo l'esecuzione e annulla "
+                             "(metodo storico, sottostima Neo4j)")
     args = parser.parse_args()
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -501,6 +556,7 @@ def main():
     print(f"=== Benchmark SQL vs Cypher ===")
     print(f"Output: {out_dir}")
     print(f"Esecuzioni misurate per query: {args.runs} (+ 1 warm-up)")
+    print(f"Query write: modalita' {args.write_mode}")
 
     pg_conn = pg_connect()
     driver  = neo4j_driver()
@@ -521,7 +577,8 @@ def main():
 
             for q in QUERIES:
                 try:
-                    res = run_one_query(q, pg_conn, neo_session, args.runs, plans_dir)
+                    res = run_one_query(q, pg_conn, neo_session, args.runs, plans_dir,
+                                        write_mode=args.write_mode)
                 except Exception as e:
                     print(f"  [ERRORE] {q.id}: {e}")
                     continue
@@ -608,6 +665,7 @@ def main():
         "statistical_method": "Mann-Whitney U (two-sided, alpha=0.05)",
         "ci_method":  "Bootstrap 95% CI of the median (10000 resamples, seed=42)",
         "postgres_vacuum_before_run": vacuum_stats,
+        "write_mode": args.write_mode,
         **collect_hardware_info(),
         **db_versions,
     }

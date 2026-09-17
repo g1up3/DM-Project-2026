@@ -1,0 +1,18 @@
++-- ProduceResults@neo4j  (rows: 20, dbHits: 0)
+    identifiers: ['teammate', 'shared_matches']
+  +-- Top@neo4j  (rows: 20, dbHits: 0)
+      identifiers: ['teammate', 'shared_matches']
+    +-- EagerAggregation@neo4j  (rows: 21, dbHits: 620)
+        identifiers: ['teammate', 'shared_matches']
+      +-- Filter@neo4j  (rows: 310, dbHits: 1269)
+          identifiers: ['l1', 'm', 'teammate', 'p', 'l2']
+        +-- Expand(All)@neo4j  (rows: 680, dbHits: 711)
+            identifiers: ['l1', 'm', 'teammate', 'p', 'l2']
+          +-- CacheProperties@neo4j  (rows: 31, dbHits: 33)
+              identifiers: ['p', 'l1', 'm']
+            +-- Filter@neo4j  (rows: 31, dbHits: 568)
+                identifiers: ['p', 'l1', 'm']
+              +-- Expand(All)@neo4j  (rows: 249, dbHits: 249)
+                  identifiers: ['p', 'l1', 'm']
+                +-- NodeIndexSeek@neo4j  (rows: 1, dbHits: 2)
+                    identifiers: ['p']

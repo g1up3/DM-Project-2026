@@ -1,0 +1,16 @@
++-- ProduceResults@neo4j  (rows: 10, dbHits: 0)
+    identifiers: ['p', 'goals', 'player_name', 'season']
+  +-- Projection@neo4j  (rows: 10, dbHits: 0)
+      identifiers: ['p', 'goals', 'player_name', 'season']
+    +-- Top@neo4j  (rows: 10, dbHits: 0)
+        identifiers: ['p', 'goals', 'player_name']
+      +-- Projection@neo4j  (rows: 1699, dbHits: 3398)
+          identifiers: ['p', 'goals', 'player_name']
+        +-- EagerAggregation@neo4j  (rows: 1699, dbHits: 0)
+            identifiers: ['p', 'goals']
+          +-- Filter@neo4j  (rows: 6326, dbHits: 12652)
+              identifiers: ['m', 'p']
+            +-- Expand(All)@neo4j  (rows: 6326, dbHits: 6326)
+                identifiers: ['m', 'p']
+              +-- NodeIndexSeek@neo4j  (rows: 3326, dbHits: 3327)
+                  identifiers: ['m']

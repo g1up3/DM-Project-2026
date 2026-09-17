@@ -151,9 +151,10 @@ def main():
             # --- 2. sweep semantico su piu' coppie (SQL vs V0 vs V2) ---
             for a, b in PAIRS:
                 params = {"player_a": a, "player_b": b}
-                _, sql_rows = run_pg(pg, sql, params)
+                run_pg(pg, sql, params)                                   # warm-up
+                sql_ms, sql_rows, _ = run_pg(pg, sql, params)
                 sql_hops = sql_rows[0][0] if sql_rows else None
-                row = {"pair": [a, b], "sql_hops": sql_hops}
+                row = {"pair": [a, b], "sql_hops": sql_hops, "sql_ms": round(sql_ms, 2)}
                 for name in SWEEP_VARIANTS:
                     run_cypher(s, VARIANTS[name], params, args.timeout)      # warm-up
                     h, t = run_cypher(s, VARIANTS[name], params, args.timeout)

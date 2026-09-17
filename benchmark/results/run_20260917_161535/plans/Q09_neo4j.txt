@@ -1,0 +1,44 @@
++-- ProduceResults@neo4j  (rows: 20, dbHits: 0)
+    identifiers: ['player_2hop', 'connection_strength']
+  +-- Top@neo4j  (rows: 20, dbHits: 0)
+      identifiers: ['player_2hop', 'connection_strength']
+    +-- EagerAggregation@neo4j  (rows: 1735, dbHits: 0)
+        identifiers: ['player_2hop', 'connection_strength']
+      +-- Filter@neo4j  (rows: 3228, dbHits: 110424)
+          identifiers: ['x', 't3', 'r4', 'p2', 'direct_set', 'covered_pairs']
+        +-- Expand(All)@neo4j  (rows: 34656, dbHits: 34656)
+            identifiers: ['x', 't3', 'r4', 'p2', 'direct_set', 'covered_pairs']
+          +-- CacheProperties@neo4j  (rows: 11003, dbHits: 11005)
+              identifiers: ['x', 'direct_set', 'covered_pairs', 'p2']
+            +-- Filter@neo4j  (rows: 11003, dbHits: 0)
+                identifiers: ['x', 'direct_set', 'covered_pairs', 'p2']
+              +-- Apply@neo4j  (rows: 11060, dbHits: 0)
+                  identifiers: ['x', 'direct_set', 'covered_pairs', 'p2']
+                +-- EagerAggregation@neo4j  (rows: 1, dbHits: 338)
+                    identifiers: ['x', 'direct_set', 'covered_pairs']
+                  +-- Filter@neo4j  (rows: 338, dbHits: 676)
+                      identifiers: ['x', 't2', 'direct_set', 'r3', 'd']
+                    +-- Expand(All)@neo4j  (rows: 35002, dbHits: 35002)
+                        identifiers: ['x', 't2', 'direct_set', 'r3', 'd']
+                      +-- CacheProperties@neo4j  (rows: 299, dbHits: 299)
+                          identifiers: ['x', 'direct_set', 't2']
+                        +-- Apply@neo4j  (rows: 299, dbHits: 0)
+                            identifiers: ['x', 'direct_set', 't2']
+                          +-- EagerAggregation@neo4j  (rows: 1, dbHits: 0)
+                              identifiers: ['x', 'direct_set']
+                            +-- Filter@neo4j  (rows: 175, dbHits: 1806)
+                                identifiers: ['x', 't', 'direct', 'r1', 'r2']
+                              +-- Expand(All)@neo4j  (rows: 1464, dbHits: 1472)
+                                  identifiers: ['x', 't', 'direct', 'r1', 'r2']
+                                +-- CacheProperties@neo4j  (rows: 8, dbHits: 8)
+                                    identifiers: ['x', 'r1', 't']
+                                  +-- Filter@neo4j  (rows: 8, dbHits: 16)
+                                      identifiers: ['x', 'r1', 't']
+                                    +-- Expand(All)@neo4j  (rows: 8, dbHits: 8)
+                                        identifiers: ['x', 'r1', 't']
+                                      +-- NodeIndexSeek@neo4j  (rows: 1, dbHits: 2)
+                                          identifiers: ['x']
+                          +-- NodeByLabelScan@neo4j  (rows: 299, dbHits: 300)
+                              identifiers: ['x', 'direct_set', 't2']
+                +-- NodeByLabelScan@neo4j  (rows: 11060, dbHits: 11061)
+                    identifiers: ['x', 'direct_set', 'covered_pairs', 'p2']

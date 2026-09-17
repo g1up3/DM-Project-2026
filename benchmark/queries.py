@@ -15,11 +15,16 @@ from dataclasses import dataclass
 class QueryDef:
     id: str
     name: str
-    category: str            # 'A_relational' | 'B_multihop' | 'C_graph_native'
+    category: str            # 'A_relational' | 'B_multihop' | 'C_graph_native' | 'D_write'
     sql_file: str
     cypher_file: str
     params: dict
     notes: str = ""
+    # Solo per le query write (categoria D), in modalita' --write-mode commit:
+    # statement eseguiti (fuori dal timer) dopo ogni run per riportare il DB
+    # allo stato iniziale. None = la query e' idempotente, nessun cleanup.
+    cleanup_sql: str | None = None
+    cleanup_cypher: str | None = None
 
 
 QUERIES: list[QueryDef] = [
@@ -110,7 +115,8 @@ QUERIES: list[QueryDef] = [
         sql_file="Q11_bulk_update.sql",
         cypher_file="Q11_bulk_update.cypher",
         params={},
-        notes="Mass write workload (no SELECT)",
+        notes="Mass write workload (no SELECT). LOWER() e' idempotente sui dati: "
+              "nessun cleanup necessario dopo il commit.",
     ),
     QueryDef(
         id="Q12",
@@ -120,5 +126,7 @@ QUERIES: list[QueryDef] = [
         cypher_file="Q12_schema_evolution.cypher",
         params={},
         notes="DDL+UPDATE in SQL vs single SET in Cypher",
+        cleanup_sql="ALTER TABLE soccer.match DROP COLUMN IF EXISTS total_goals",
+        cleanup_cypher="MATCH (m:Match) REMOVE m.totalGoals",
     ),
 ]
