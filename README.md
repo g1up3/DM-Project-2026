@@ -25,6 +25,26 @@ snapshot di attributi; il parsing dei campi XML espande i match in **917.815
 eventi** e **542.281 righe di formazione**, per ~1.5M righe totali caricate
 nei due sistemi.
 
+Inventario dei dati caricati (ogni relazione del grafo coincide con la
+popolazione Postgres corrispondente — e' la verifica di consistenza fra i due sistemi):
+
+| PostgreSQL | Righe | Neo4j | Conteggio |
+|---|---:|---|---:|
+| `match` | 25.979 | `(:Match)`, `HOME`, `AWAY`, `IN_LEAGUE` | 25.979 ciascuno |
+| `player` | 11.060 | `(:Player)` | 11.060 |
+| `team` / `league` / `country` | 299 / 11 / 11 | `(:Team)` / `(:League)` / `(:Country)` | 299 / 11 / 11 |
+| `match_lineup` | 542.281 | `LINEUP_OF` | 542.281 |
+| `match_event` — falli con autore | 210.100 | `COMMITTED_FOUL_IN` | 210.100 |
+| `match_event` — cartellini con autore | 61.380 | `RECEIVED_CARD_IN` | 61.380 |
+| `match_event` — gol con marcatore | 39.665 | `SCORED_IN` | 39.665 |
+| `match_event` — gol con assist | 17.000 | `ASSISTED_IN` | 17.000 |
+| `mv_played_for` (derivata) | 35.002 | `PLAYED_FOR` (derivata) | 35.002 |
+| `player_stats` / `team_stats` | 183.978 / 1.458 | non caricati (scope) | — |
+| **Totale** | **~1.75M righe** | **37.360 nodi, 983.376 relazioni** | |
+
+I 917.815 eventi di `match_event` includono anche tiri, cross, corner e
+possesso (non modellati nel grafo) e gli eventi con autore ignoto.
+
 L'analisi misura, su **12 query parametrizzate** equivalenti nelle due tecnologie
 (10 read-only + 2 di scrittura), su tre dimensioni indipendenti:
 - **performance** (mediana di 15 esecuzioni con warm-up scartato, CI bootstrap al 95%,
