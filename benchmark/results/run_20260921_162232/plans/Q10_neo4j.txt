@@ -1,0 +1,8 @@
++-- ProduceResults@neo4j  (rows: 1, dbHits: 0)
+    identifiers: ['x', 'a', 'shortest_path_hops', 'anon_7', 'b', 'r1', 'r2']
+  +-- Projection@neo4j  (rows: 1, dbHits: 0)
+      identifiers: ['x', 'a', 'shortest_path_hops', 'anon_7', 'b', 'r1', 'r2']
+    +-- StatefulShortestPath(Into, Trail)@neo4j  (rows: 1, dbHits: 4398)
+        identifiers: ['x', 'a', 'anon_7', 'b', 'r1', 'r2']
+      +-- MultiNodeIndexSeek@neo4j  (rows: 1, dbHits: 4)
+          identifiers: ['a', 'b']

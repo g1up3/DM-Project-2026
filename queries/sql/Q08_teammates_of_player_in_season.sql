@@ -2,7 +2,10 @@
 -- Categoria C (graph-native): self-join su match_lineup con stesso side.
 -- Parametri: %(player_name)s, %(season)s, %(top_n)s
 
-SELECT teammate.player_name AS teammate,
+-- GROUP BY su player_api_id, non sul nome (163 omonimi nel dataset): l'id
+-- compare nel result-set cosi' che il confronto fra i due sistemi sia esatto.
+SELECT teammate.player_api_id AS teammate_api_id,
+       teammate.player_name   AS teammate,
        COUNT(*) AS shared_matches
 FROM   soccer.match_lineup l1
 JOIN   soccer.match m  ON m.match_api_id = l1.match_api_id
@@ -14,6 +17,6 @@ JOIN   soccer.match_lineup l2
 JOIN   soccer.player teammate ON teammate.player_api_id = l2.player_api_id
 WHERE  p.player_name = %(player_name)s
   AND  m.season      = %(season)s
-GROUP  BY teammate.player_name
-ORDER  BY shared_matches DESC, teammate
+GROUP  BY teammate.player_api_id, teammate.player_name
+ORDER  BY shared_matches DESC, teammate, teammate_api_id
 LIMIT  %(top_n)s;

@@ -1,0 +1,102 @@
+{
+  "timestamp": "20260921_162825",
+  "runs": 10,
+  "results": [
+    {
+      "experiment": "Q07-scaled",
+      "n_seasons": 2,
+      "pg_median_ms": 123.52,
+      "pg_ci": [
+        116.55,
+        134.84
+      ],
+      "neo_median_ms": 76.94,
+      "neo_ci": [
+        66.78,
+        90.06
+      ],
+      "n_rows": 3065,
+      "equal_results": true
+    },
+    {
+      "experiment": "Q07-scaled",
+      "n_seasons": 4,
+      "pg_median_ms": 206.66,
+      "pg_ci": [
+        191.7,
+        218.41
+      ],
+      "neo_median_ms": 77.69,
+      "neo_ci": [
+        69.76,
+        96.91
+      ],
+      "n_rows": 1628,
+      "equal_results": true
+    },
+    {
+      "experiment": "Q07-scaled",
+      "n_seasons": 8,
+      "pg_median_ms": 409.28,
+      "pg_ci": [
+        398.58,
+        433.67
+      ],
+      "neo_median_ms": 110.24,
+      "neo_ci": [
+        108.01,
+        113.46
+      ],
+      "n_rows": 539,
+      "equal_results": true
+    },
+    {
+      "experiment": "Q09-scaled",
+      "n_seasons": 2,
+      "pg_median_ms": 15.5,
+      "pg_ci": [
+        13.69,
+        17.79
+      ],
+      "neo_median_ms": 24.93,
+      "neo_ci": [
+        22.3,
+        28.37
+      ],
+      "n_rows": 20,
+      "equal_results": true
+    },
+    {
+      "experiment": "Q09-scaled",
+      "n_seasons": 4,
+      "pg_median_ms": 23.82,
+      "pg_ci": [
+        20.69,
+        26.11
+      ],
+      "neo_median_ms": 34.05,
+      "neo_ci": [
+        32.65,
+        39.04
+      ],
+      "n_rows": 20,
+      "equal_results": true
+    },
+    {
+      "experiment": "Q09-scaled",
+      "n_seasons": 8,
+      "pg_median_ms": 42.1,
+      "pg_ci": [
+        34.86,
+        43.31
+      ],
+      "neo_median_ms": 81.38,
+      "neo_ci": [
+        79.3,
+        87.37
+      ],
+      "n_rows": 20,
+      "equal_results": true
+    }
+  ]
+}

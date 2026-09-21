@@ -1,0 +1,23 @@
+{
+  "postgres": {
+    "shared_buffers": "128MB",
+    "work_mem": "4MB",
+    "maintenance_work_mem": "64MB",
+    "effective_cache_size": "4GB",
+    "random_page_cost": "4",
+    "seq_page_cost": "1",
+    "max_parallel_workers_per_gather": "2",
+    "jit": "on",
+    "enable_hashjoin": "on",
+    "enable_mergejoin": "on",
+    "enable_nestloop": "on",
+    "enable_seqscan": "on",
+    "enable_indexscan": "on"
+  },
+  "neo4j": {
+    "server.memory.heap.initial_size": "512.00MiB",
+    "server.memory.heap.max_size": "1.00GiB",
+    "server.memory.pagecache.size": "512.00MiB",
+    "db.tx_log.rotation.retention_policy": "2 days 2G"
+  }
+}

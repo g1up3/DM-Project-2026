@@ -1,0 +1,37 @@
+Sort  (cost=14207.83..14215.17 rows=2937 width=44) (actual time=67.231..67.233 rows=29.00 loops=1)
+  Sort Key: (count(*)) DESC, scorer.player_name, assister.player_name, scorer.player_api_id, assister.player_api_id
+  Sort Method: quicksort  Memory: 26kB
+  Buffers: shared hit=152350
+  ->  HashAggregate  (cost=13928.50..14038.65 rows=2937 width=44) (actual time=66.217..67.204 rows=29.00 loops=1)
+        Group Key: scorer.player_api_id, assister.player_api_id
+        Filter: (count(*) >= 10)
+        Batches: 1  Memory Usage: 1305kB
+        Rows Removed by Filter: 12240
+        Buffers: shared hit=152350
+        ->  Merge Join  (cost=1.14..13862.41 rows=8812 width=36) (actual time=0.035..62.997 rows=16934.00 loops=1)
+              Merge Cond: (e.player2_id = assister.player_api_id)
+              Buffers: shared hit=152350
+              ->  Nested Loop  (cost=0.72..59502.76 rows=8812 width=22) (actual time=0.029..58.864 rows=16934.00 loops=1)
+                    Buffers: shared hit=141450
+                    ->  Index Scan using ix_event_player2 on match_event e  (cost=0.42..57919.34 rows=8812 width=8) (actual time=0.021..51.513 rows=17000.00 loops=1)
+                          Index Cond: (player2_id IS NOT NULL)
+                          Filter: ((event_type)::text = 'goal'::text)
+                          Rows Removed by Filter: 189945
+                          Index Searches: 1
+                          Buffers: shared hit=132687
+                    ->  Memoize  (cost=0.30..0.37 rows=1 width=18) (actual time=0.000..0.000 rows=1.00 loops=17000)
+                          Cache Key: e.player1_id
+                          Cache Mode: logical
+                          Hits: 14078  Misses: 2922  Evictions: 0  Overflows: 0  Memory Usage: 339kB
+                          Buffers: shared hit=8763
+                          ->  Index Scan using player_pkey on player scorer  (cost=0.29..0.36 rows=1 width=18) (actual time=0.001..0.001 rows=1.00 loops=2922)
+                                Index Cond: (player_api_id = e.player1_id)
+                                Index Searches: 2921
+                                Buffers: shared hit=8763
+              ->  Index Scan using player_pkey on player assister  (cost=0.29..710.16 rows=11060 width=18) (actual time=0.003..2.460 rows=11045.00 loops=1)
+                    Index Searches: 1
+                    Buffers: shared hit=10900
+Planning:
+  Buffers: shared hit=28
+Planning Time: 0.299 ms
+Execution Time: 67.289 ms

@@ -1,0 +1,18 @@
++-- ProduceResults@neo4j  (rows: 15, dbHits: 0)
+    identifiers: ['player', 'yellow', 'red', 'total_cards']
+  +-- Top@neo4j  (rows: 15, dbHits: 0)
+      identifiers: ['player', 'yellow', 'red', 'total_cards']
+    +-- EagerAggregation@neo4j  (rows: 523, dbHits: 2810)
+        identifiers: ['player', 'yellow', 'red', 'total_cards']
+      +-- Filter@neo4j  (rows: 938, dbHits: 3575)
+          identifiers: ['target', 'm', 'c', 'p']
+        +-- Expand(All)@neo4j  (rows: 1699, dbHits: 2003)
+            identifiers: ['target', 'm', 'c', 'p']
+          +-- Filter@neo4j  (rows: 304, dbHits: 618)
+              identifiers: ['target', 'm']
+            +-- Expand(All)@neo4j  (rows: 304, dbHits: 304)
+                identifiers: ['target', 'm']
+              +-- CacheProperties@neo4j  (rows: 1, dbHits: 8)
+                  identifiers: ['target']
+                +-- NodeIndexSeek@neo4j  (rows: 1, dbHits: 2)
+                    identifiers: ['target']

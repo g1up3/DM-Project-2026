@@ -20,8 +20,10 @@ Confronto fra un DBMS relazionale (**PostgreSQL**) e un graph database
 ~26k partite di campionato delle 11 leghe top europee dal 2008 al 2016, con
 formazioni, eventi (gol, assist, cartellini, ...), giocatori e squadre.
 
-*Nota sui volumi*: il sorgente contiene 25.979 match, 11.060 giocatori e ~184k
-snapshot di attributi; il parsing dei campi XML espande i match in **917.815
+*Nota sui volumi*: il sorgente contiene 25.979 match (la proposta scriveva
+"approximately 300,000 match records": era una stima sbagliata, corretta
+all'esplorazione del dataset — `reports/dataset_exploration.md`), 11.060
+giocatori e ~184k snapshot di attributi; il parsing dei campi XML espande i match in **917.815
 eventi** e **542.281 righe di formazione**, per ~1.5M righe totali caricate
 nei due sistemi.
 
@@ -65,16 +67,16 @@ equivalente alla relazione derivata `:PLAYED_FOR` di Neo4j (vedere
 vantaggio strutturale dovuto al modello di carico.
 
 I risultati raffinano l'aspettativa teorica: sulle **aggregazioni "OLAP-like"
-leggere** (categoria A, mediane sotto i 15 ms) i due sistemi sono in **parita'
+leggere** (categoria A, mediane sotto i 25 ms) i due sistemi sono in **parita'
 operativa** — il vincitore cambia da un run all'altro; il vantaggio netto di
 **Postgres** emerge dove il join su indici B-tree batte il traversal a
-profondita' *fissa* (Q09, 2-hop con materialized view, 2.1x, e il divario cresce
+profondita' *fissa* (Q09, 2-hop con materialized view, 2.7x, e il divario cresce
 con i dati); **Neo4j vince nettamente sui traversal a profondita' variabile**
 (Q10) e in modo netto ma piu' contenuto sulle aggregazioni full-scan sulle
 relazioni (Q07, 1.9x — il gap si allarga con la taglia dei dati) e sulla schema
-evolution (Q12, 4.5x). Il caso più drammatico è lo shortest path tra due
-giocatori (Messi → Pirlo): **12 ms su Neo4j contro 671 ms su Postgres**
-(**57x**, p < 0.001) con semantica *identica* (vincolo di stagione dentro il
+evolution (Q12, 5.1x). Il caso più drammatico è lo shortest path tra due
+giocatori (Messi → Pirlo): **14 ms su Neo4j contro 792 ms su Postgres**
+(**55x**, p < 0.001) con semantica *identica* (vincolo di stagione dentro il
 quantified path pattern) e codice Cypher 4 volte più corto del CTE ricorsivo SQL.
 
 Quattro analisi di sensibilita' (sez. 10 e 12 del report) mettono alla prova i
@@ -85,7 +87,7 @@ corretto, il gap scende da 7.4x a 1.9x; la formulazione `shortestPath`
 sostituita da una semanticamente esatta; le scritture del benchmark gonfiavano
 Postgres via MVCC (Q01 da 10 a 23 ms) finche' l'harness non ha adottato
 `VACUUM (ANALYZE)` prima di ogni run e la misura fino al commit (con il solo
-rollback Q12 risultava 11x invece di 4.5x); su 2/4/8 stagioni il vantaggio di
+rollback Q12 risultava 11x invece di ~5x); su 2/4/8 stagioni il vantaggio di
 Neo4j su Q07 si allarga e quello di Postgres su Q09 pure.
 
 ## Struttura del repository
@@ -131,7 +133,7 @@ Neo4j su Q07 si allarga e quello di Postgres su Q09 pure.
 ├── tests/                        # Test unitari dell'harness (pytest)
 ├── Makefile                      # Entry-point unico: make benchmark / report / test
 ├── LICENSE                       # MIT (codice); il dataset resta ODbL, non ridistribuito
-├── PostgreSQL_vs_Neo4j_DAngelica_Leone.pptx   # Slide deck della presentazione (16 slide + 4 di backup)
+├── PostgreSQL_vs_Neo4j_DAngelica_Leone.pptx   # Slide deck della presentazione (16 slide + 6 di backup)
 ├── PostgreSQL_vs_Neo4j_DAngelica_Leone.pdf    # Lo stesso deck in PDF, font incorporati
 ├── Live_Demo_Script.md           # Sceneggiatura della demo live (~5 min)
 ├── clean/                        # CSV puliti generati da transform.py (non committati)
@@ -140,33 +142,34 @@ Neo4j su Q07 si allarga e quello di Postgres su Q09 pure.
 
 ## Risultati di sintesi
 
-Run di riferimento: `run_20260917_161535` (MacBook Air M2, 8 GB, PostgreSQL 18.6, Neo4j 2026.04.0).
+Run di riferimento: `run_20260921_162704` (MacBook Air M2, 8 GB, PostgreSQL 18.6, Neo4j 2026.04.0).
 15 esecuzioni misurate + 1 warm-up scartato, `VACUUM (ANALYZE)` prima delle misure, query write
 misurate fino al `COMMIT`. Significativita' via Mann-Whitney U (alpha = 0.05), effect size rank-biserial.
 
-| ID  | Query                                | Categoria         | Postgres (ms) | Neo4j (ms) | Vincitore    | Speedup | p-value  | r    | Sig |
-| --- | ------------------------------------ | ----------------- | ------------: | ---------: | ------------ | ------: | -------: | ---: | --- |
-| Q01 | Top scorers by season                | A — Relational    |           9.9 |        6.3 | **Neo4j**    |   1.58x | < 0.001  | 0.82 | Yes |
-| Q02 | League standings by season           | A — Relational    |           6.2 |        5.0 | **Neo4j**    |   1.24x | 0.005    | 0.60 | Yes |
-| Q03 | Goals per match by league            | A — Relational    |           4.3 |        4.4 | Postgres     |   1.03x | 0.125    | 0.33 | No  |
-| Q04 | Home win % by team                   | A — Relational    |          12.2 |       14.6 | **Postgres** |   1.20x | 0.018    | 0.51 | Yes |
-| Q05 | Goal-assist partnerships             | B — Multi-hop     |          55.7 |       43.3 | **Neo4j**    |   1.29x | < 0.001  | 0.87 | Yes |
-| Q06 | Cards vs Real Madrid                 | B — Multi-hop     |          22.3 |        6.1 | **Neo4j**    |   3.64x | < 0.001  | 0.89 | Yes |
-| Q07 | Players in all 8 seasons             | B — Multi-hop     |         384.1 |      201.4 | **Neo4j**    |   1.91x | < 0.001  | 1.00 | Yes |
-| Q08 | Teammates of Messi 2015/16           | C — Graph-native  |           5.1 |        1.9 | **Neo4j**    |   2.66x | < 0.001  | 0.87 | Yes |
-| Q09 | 2-hop teammates of Messi             | C — Graph-native  |          32.3 |       67.6 | **Postgres** |   2.09x | < 0.001  | 1.00 | Yes |
-| Q10 | Shortest path Messi → Pirlo          | C — Graph-native  |         670.5 |       11.8 | **Neo4j**    | **56.7x** | < 0.001  | 1.00 | Yes |
-| Q11 | Bulk UPDATE on event subtype         | D — Write         |         319.1 |      211.2 | **Neo4j**    |   1.51x | < 0.001  | 1.00 | Yes |
-| Q12 | Schema evolution: add totalGoals     | D — Write         |         352.3 |       78.4 | **Neo4j**    |   4.49x | < 0.001  | 1.00 | Yes |
+| ID  | Query                                | Categoria         | Postgres (ms) | Neo4j (ms) | Vincitore    | Speedup | p-value  | r    | Sig | Holm |
+| --- | ------------------------------------ | ----------------- | ------------: | ---------: | ------------ | ------: | -------: | ---: | --- | ---- |
+| Q01 | Top scorers by season                | A — Relational    |          10.3 |        6.9 | **Neo4j**    |   1.51x | < 0.001  | 0.75 | Yes | Yes  |
+| Q02 | League standings by season           | A — Relational    |           3.7 |        5.1 | Postgres     |   1.38x | 0.229    | 0.26 | No  | No  |
+| Q03 | Goals per match by league            | A — Relational    |           8.3 |        5.4 | **Neo4j**    |   1.54x | 0.028    | 0.48 | Yes | No  |
+| Q04 | Home win % by team                   | A — Relational    |          15.9 |       20.7 | **Postgres** |   1.30x | 0.004    | 0.62 | Yes | Yes  |
+| Q05 | Goal-assist partnerships             | B — Multi-hop     |          61.5 |       38.1 | **Neo4j**    |   1.62x | < 0.001  | 0.87 | Yes | Yes  |
+| Q06 | Cards vs Real Madrid                 | B — Multi-hop     |          21.8 |        7.6 | **Neo4j**    |   2.85x | < 0.001  | 1.00 | Yes | Yes  |
+| Q07 | Players in all 8 seasons             | B — Multi-hop     |         400.2 |      216.1 | **Neo4j**    |   1.85x | < 0.001  | 1.00 | Yes | Yes  |
+| Q08 | Teammates of Messi 2015/16           | C — Graph-native  |           7.0 |        4.2 | **Neo4j**    |   1.66x | < 0.001  | 0.94 | Yes | Yes  |
+| Q09 | 2-hop teammates of Messi             | C — Graph-native  |          28.9 |       77.6 | **Postgres** |   2.68x | < 0.001  | 1.00 | Yes | Yes  |
+| Q10 | Shortest path Messi → Pirlo          | C — Graph-native  |         792.1 |       14.4 | **Neo4j**    | **54.9x** | < 0.001  | 1.00 | Yes | Yes  |
+| Q11 | Bulk UPDATE on event subtype         | D — Write         |         303.1 |      195.6 | **Neo4j**    |   1.55x | < 0.001  | 0.96 | Yes | Yes  |
+| Q12 | Schema evolution: add totalGoals     | D — Write         |         435.9 |       85.4 | **Neo4j**    |   5.11x | < 0.001  | 1.00 | Yes | Yes  |
 
 Tutte e 10 le query read (Q01-Q10) restituiscono risultati equivalenti nei due
 sistemi (verificato automaticamente come **multiset** di tuple normalizzate; per
 Q10 anche su 8 coppie di giocatori, per Q02 su tutte le 88 coppie lega-stagione);
 le 2 write modificano lo stesso numero di righe (21.442 e 25.979, verificato dai
-contatori dei driver). 11 confronti su 12 sono significativi (11 anche dopo la
-correzione di Holm per confronti multipli); 9 hanno effect size rank-biserial
->= 0.8. Le quattro query di categoria A stanno tutte sotto i 15 ms: e' il regime
-in cui il vincitore cambia fra run (sez. 10.3 del report) e va letto come parita'.
+contatori dei driver). 11 confronti su 12 sono significativi al livello nominale,
+10 dopo la correzione di Holm per confronti multipli (cadono Q02 e Q03); 8 hanno
+effect size rank-biserial >= 0.8. Le quattro query di categoria A stanno tutte
+sotto i 25 ms: e' il regime in cui il vincitore cambia fra run (sez. 10.3 del
+report) e va letto come parita'.
 
 ## Come riprodurre
 

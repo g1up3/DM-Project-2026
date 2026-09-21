@@ -67,14 +67,14 @@ direct_teammates AS (
 teams_of_direct AS (
     SELECT DISTINCT pf.team_api_id, pf.season
     FROM   pf JOIN direct_teammates d ON d.player_api_id = pf.player_api_id)
-SELECT p.player_name AS player_2hop, COUNT(*) AS connection_strength
+SELECT p.player_api_id AS player_2hop_api_id, p.player_name AS player_2hop, COUNT(*) AS connection_strength
 FROM   pf
 JOIN   teams_of_direct td ON td.team_api_id = pf.team_api_id AND td.season = pf.season
 JOIN   soccer.player p ON p.player_api_id = pf.player_api_id
 WHERE  pf.player_api_id NOT IN (SELECT player_api_id FROM direct_teammates)
   AND  p.player_name <> %(player_name)s
-GROUP  BY p.player_name
-ORDER  BY connection_strength DESC, player_2hop
+GROUP  BY p.player_api_id, p.player_name
+ORDER  BY connection_strength DESC, player_2hop, player_2hop_api_id
 LIMIT  %(top_n)s"""
 Q09_CY = """
 MATCH (x:Player {name: $player_name})-[r1:PLAYED_FOR]->(t:Team)<-[r2:PLAYED_FOR]-(direct:Player)
@@ -86,8 +86,8 @@ WITH x, direct_set, collect(DISTINCT [t2.teamApiId, r3.season]) AS covered_pairs
 MATCH (p2:Player)-[r4:PLAYED_FOR]->(t3:Team)
 WHERE p2 <> x AND NOT p2 IN direct_set AND r4.season IN $seasons
   AND [t3.teamApiId, r4.season] IN covered_pairs
-RETURN p2.name AS player_2hop, count(*) AS connection_strength
-ORDER BY connection_strength DESC, player_2hop
+RETURN p2.playerApiId AS player_2hop_api_id, p2.name AS player_2hop, count(*) AS connection_strength
+ORDER BY connection_strength DESC, player_2hop, player_2hop_api_id
 LIMIT $top_n"""
 
 EXPERIMENTS = {

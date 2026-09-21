@@ -1,6 +1,6 @@
 # Live demo script — 5 minutes
 
-Companion to the slides. The demo runs after slide 16 (Verdict); slides 17-20 are backup (20 = the twelve queries in plain words, for the Q&A).
+Companion to the slides. The demo runs after slide 16 (Verdict); slides 17-22 are backup (20 = the twelve queries in plain words, 21 = full results table, 22 = mv_played_for, for the Q&A).
 Total time: **~5 minutes**. Speak in English.
 
 ## Setup before the talk
@@ -45,9 +45,9 @@ Switch to the psql terminal and run:
 \i queries/demo/Q10_shortest_path.sql
 ```
 
-Expected: ~650-800 ms, single result row showing the hop count (**2**).
+Expected: ~750-850 ms, single result row showing the hop count (**2**).
 
-> "About seven hundred milliseconds, two hops between them."
+> "About eight hundred milliseconds, two hops between them."
 
 ### 1B — Show the Neo4j version (30 s)
 
@@ -73,7 +73,7 @@ Run.
 Point at the *Started streaming N records after X ms* line at the bottom of
 the result panel.
 
-> "**About twelve milliseconds.** Same data, same question, same answer.
+> "**About fifteen milliseconds.** Same data, same question, same answer.
 >  **Over fifty times faster**, **five lines** of code instead of twenty-one,
 >  **five operators** instead of twenty-six."
 
@@ -115,17 +115,17 @@ Switch to psql:
 \i queries/demo/Q09_two_hop_teammates.sql
 ```
 
-Expected: ~35-40 ms (first run after idle may take ~100 ms — that's why we
+Expected: ~30 ms (first run after idle may take ~100 ms — that's why we
 pre-warm), 20 rows.
 
-> "Under forty milliseconds. Twenty players, ranked by how many shared
+> "About thirty milliseconds. Twenty players, ranked by how many shared
 >  team-seasons connect them to Messi."
 
 Switch to Neo4j Browser and run the equivalent Cypher (paste from
 `queries/cypher/Q09_two_hop_teammates.cypher`, with
 `:param player_name => 'Lionel Messi'; :param top_n => 20;`).
 
-> "Around seventy. Postgres wins by almost two to one — and it's one of the
+> "Around eighty. Postgres wins by almost three to one — and it's one of the
 >  most stable results we have: effect size 1.0, same winner in every run —
 >  and the lead widens as the data grows."
 
@@ -156,7 +156,7 @@ UPDATE soccer.match SET total_goals = home_team_goal + away_team_goal;
 
 > "Two statements. ALTER TABLE took the lock, UPDATE backfilled the column."
 
-Show the timing — ~350 ms across both statements (benchmark median, commit included).
+Show the timing — ~440 ms across both statements (benchmark median, commit included).
 
 > "Cleanup..."
 
@@ -232,5 +232,5 @@ returning a path that you've seen on slide 11 — let's continue"* and move
 on. Do not let any demo issue eat more than 30 seconds of stage time.
 
 **Ultimate fallback**: the numbers are all in `reports/benchmark_report.md`
-(section 2) and the query plans in `benchmark/results/run_20260917_161535/plans/`
+(section 2) and the query plans in `benchmark/results/run_20260921_162704/plans/`
 — if a database is down, show the captured plan instead of running live.

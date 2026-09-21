@@ -17,6 +17,7 @@ WITH x, direct_set, collect(DISTINCT [t2.teamApiId, r3.season]) AS covered_pairs
 MATCH (p2:Player)-[r4:PLAYED_FOR]->(t3:Team)
 WHERE p2 <> x AND NOT p2 IN direct_set
   AND [t3.teamApiId, r4.season] IN covered_pairs
-RETURN p2.name AS player_2hop, count(*) AS connection_strength
-ORDER BY connection_strength DESC, player_2hop
+// Raggruppa per nodo (= playerApiId), non per nome: due omonimi restano distinti.
+RETURN p2.playerApiId AS player_2hop_api_id, p2.name AS player_2hop, count(*) AS connection_strength
+ORDER BY connection_strength DESC, player_2hop, player_2hop_api_id
 LIMIT $top_n;

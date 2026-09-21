@@ -16,7 +16,9 @@ MATCH (scorer:Player)-[g:SCORED_IN]->(m:Match)<-[a:ASSISTED_IN]-(assister:Player
 WHERE g.sourceEventId IS NOT NULL
   AND a.sourceEventId IS NOT NULL
   AND g.sourceEventId = a.sourceEventId
-WITH scorer.name AS scorer, assister.name AS assister, count(*) AS partnerships
+// Raggruppa per nodo (= playerApiId), non per nome: 163 omonimi nel dataset.
+WITH scorer, assister, count(*) AS partnerships
 WHERE partnerships >= $min_partnerships
-RETURN scorer, assister, partnerships
-ORDER BY partnerships DESC, scorer, assister;
+RETURN scorer.playerApiId AS scorer_api_id, scorer.name AS scorer,
+       assister.playerApiId AS assister_api_id, assister.name AS assister, partnerships
+ORDER BY partnerships DESC, scorer, assister, scorer_api_id, assister_api_id;

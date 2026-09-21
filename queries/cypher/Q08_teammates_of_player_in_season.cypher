@@ -6,6 +6,7 @@ MATCH (p:Player {name: $player_name})-[l1:LINEUP_OF]->(m:Match)<-[l2:LINEUP_OF]-
 WHERE m.season  = $season
   AND l1.side   = l2.side
   AND teammate <> p
-RETURN teammate.name AS teammate, count(*) AS shared_matches
-ORDER BY shared_matches DESC, teammate
+// Raggruppa per nodo (= playerApiId), non per nome: 163 omonimi nel dataset.
+RETURN teammate.playerApiId AS teammate_api_id, teammate.name AS teammate, count(*) AS shared_matches
+ORDER BY shared_matches DESC, teammate, teammate_api_id
 LIMIT $top_n;

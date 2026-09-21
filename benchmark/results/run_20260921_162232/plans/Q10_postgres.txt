@@ -1,0 +1,59 @@
+Aggregate  (cost=621.74..621.75 rows=1 width=4) (actual time=1027.395..1027.399 rows=1.00 loops=1)
+  Buffers: shared hit=2977128
+  CTE endpoints
+    ->  Result  (cost=16.61..16.62 rows=1 width=8) (actual time=0.018..0.020 rows=1.00 loops=1)
+          Buffers: shared hit=6
+          InitPlan 1
+            ->  Limit  (cost=0.29..8.30 rows=1 width=4) (actual time=0.008..0.009 rows=1.00 loops=1)
+                  Buffers: shared hit=3
+                  ->  Index Scan using ix_player_name on player  (cost=0.29..8.30 rows=1 width=4) (actual time=0.008..0.008 rows=1.00 loops=1)
+                        Index Cond: ((player_name)::text = 'Lionel Messi'::text)
+                        Index Searches: 1
+                        Buffers: shared hit=3
+          InitPlan 2
+            ->  Limit  (cost=0.29..8.30 rows=1 width=4) (actual time=0.006..0.006 rows=1.00 loops=1)
+                  Buffers: shared hit=3
+                  ->  Index Scan using ix_player_name on player player_1  (cost=0.29..8.30 rows=1 width=4) (actual time=0.006..0.006 rows=1.00 loops=1)
+                        Index Cond: ((player_name)::text = 'Andrea Pirlo'::text)
+                        Index Searches: 1
+                        Buffers: shared hit=3
+  CTE bfs
+    ->  Recursive Union  (cost=0.00..565.23 rows=1771 width=8) (actual time=0.019..1022.683 rows=44251.00 loops=1)
+          Storage: Memory  Maximum Storage: 948kB
+          Buffers: shared hit=2977128
+          ->  CTE Scan on endpoints  (cost=0.00..0.02 rows=1 width=8) (actual time=0.019..0.019 rows=1.00 loops=1)
+                Storage: Memory  Maximum Storage: 17kB
+                Buffers: shared hit=6
+          ->  Nested Loop  (cost=4.60..54.75 rows=177 width=8) (actual time=0.039..113.421 rows=371901.29 loops=7)
+                Join Filter: (pf2.player_api_id <> b.player_api_id)
+                Rows Removed by Join Filter: 15840
+                Buffers: shared hit=2977122
+                ->  Nested Loop  (cost=4.31..46.24 rows=10 width=22) (actual time=0.037..14.328 rows=15839.86 loops=7)
+                      Buffers: shared hit=176237
+                      ->  WorkTable Scan on bfs b  (cost=0.00..0.22 rows=3 width=8) (actual time=0.034..0.333 rows=4741.57 loops=7)
+                            Filter: (distance < 6)
+                            Rows Removed by Filter: 1580
+                      ->  Bitmap Heap Scan on mv_played_for pf1  (cost=4.31..15.31 rows=3 width=18) (actual time=0.002..0.002 rows=3.34 loops=33191)
+                            Recheck Cond: (player_api_id = b.player_api_id)
+                            Heap Blocks: exact=109855
+                            Buffers: shared hit=176237
+                            ->  Bitmap Index Scan on ix_mv_played_for_player  (cost=0.00..4.31 rows=3 width=0) (actual time=0.001..0.001 rows=3.34 loops=33191)
+                                  Index Cond: (player_api_id = b.player_api_id)
+                                  Index Searches: 33191
+                                  Buffers: shared hit=66382
+                ->  Index Scan using ix_mv_played_for_team_season on mv_played_for pf2  (cost=0.29..0.62 rows=15 width=18) (actual time=0.001..0.004 rows=24.48 loops=110879)
+                      Index Cond: ((team_api_id = pf1.team_api_id) AND ((season)::text = (pf1.season)::text))
+                      Index Searches: 110879
+                      Buffers: shared hit=2800885
+  InitPlan 5
+    ->  CTE Scan on endpoints endpoints_1  (cost=0.00..0.02 rows=1 width=4) (actual time=0.000..0.001 rows=1.00 loops=1)
+          Storage: Memory  Maximum Storage: 17kB
+  ->  CTE Scan on bfs  (cost=0.00..39.85 rows=9 width=4) (actual time=1.434..1027.387 rows=5.00 loops=1)
+        Filter: (player_api_id = (InitPlan 5).col1)
+        Rows Removed by Filter: 44246
+        Storage: Memory  Maximum Storage: 1895kB
+        Buffers: shared hit=2977128
+Planning:
+  Buffers: shared hit=12
+Planning Time: 0.306 ms
+Execution Time: 1027.438 ms

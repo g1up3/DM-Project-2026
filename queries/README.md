@@ -60,8 +60,11 @@ crescente, piu' una di scrittura (D):
   e non hanno controparte in Neo4j. La versione SQL filtra
   `player1_id IS NOT NULL` cosi' che i due workload tocchino le stesse 21.442
   righe logiche (verificato da rowcount vs `properties_set`).
-- **Q07 / Q04**: raggruppano per `player_api_id` / `team_api_id`. Raggruppando
-  per nome, 14 "giocatori" di Q07 sarebbero omonimi fusi (550 vs 539 reali).
+- **Q04 / Q05 / Q07 / Q08 / Q09**: raggruppano per `player_api_id` / `team_api_id`
+  e restituiscono l'id insieme al nome. Raggruppando per nome, 14 "giocatori"
+  di Q07 sarebbero omonimi fusi (550 vs 539 reali) e la top-20 di Q09
+  conterrebbe una riga fittizia (i due "Maicon" sommati); Q05 e Q08 non
+  cambiano sui parametri del benchmark, ma la regola e' la stessa per tutte.
 
 ## Struttura
 

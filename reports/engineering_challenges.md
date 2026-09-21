@@ -7,7 +7,7 @@ and actually building a robust pipeline on real, messy data.
 
 ---
 
-## Challenge 1 — 5,632 orphan player references in match events
+## Challenge 1 — 5,653 orphan player references in match events
 
 ### Symptom
 

@@ -139,7 +139,9 @@ Per ciascuna query e ciascun sistema:
    della mediana (10.000 ricampionamenti, seed fisso 42 per riproducibilita').
 5. **Significativita'**: test di **Mann-Whitney U** (non parametrico,
    two-sided, alpha = 0.05) + effect size **rank-biserial** per la
-   magnitudine della differenza.
+   magnitudine della differenza. La correzione di **Holm-Bonferroni** per i
+   12 confronti e' applicata in `generate_report.py` (colonna "Sig (Holm)"
+   del report); `significance.csv` riporta il p-value grezzo.
 6. **Query plan**: per ogni query vengono catturati `EXPLAIN (ANALYZE,
    BUFFERS)` su Postgres e `PROFILE` su Neo4j, salvati in `plans/`.
 7. **Verifica risultati**: i set di tuple restituiti dai due sistemi vengono

@@ -24,7 +24,10 @@ WITH x_history AS (        -- (team, season) di X
     FROM   soccer.mv_played_for pf
     JOIN   direct_teammates d ON d.player_api_id = pf.player_api_id
 )
-SELECT p.player_name AS player_2hop,
+-- GROUP BY su player_api_id, non sul nome: con il solo nome due omonimi
+-- (es. i due "Maicon") si fondono in una riga fittizia (verificato).
+SELECT p.player_api_id AS player_2hop_api_id,
+       p.player_name   AS player_2hop,
        COUNT(*) AS connection_strength
 FROM   soccer.mv_played_for pf
 JOIN   teams_of_direct td ON td.team_api_id = pf.team_api_id
@@ -32,6 +35,6 @@ JOIN   teams_of_direct td ON td.team_api_id = pf.team_api_id
 JOIN   soccer.player p ON p.player_api_id = pf.player_api_id
 WHERE  pf.player_api_id NOT IN (SELECT player_api_id FROM direct_teammates)
   AND  p.player_name <> 'Lionel Messi'
-GROUP  BY p.player_name
-ORDER  BY connection_strength DESC, player_2hop
+GROUP  BY p.player_api_id, p.player_name
+ORDER  BY connection_strength DESC, player_2hop, player_2hop_api_id
 LIMIT  20;

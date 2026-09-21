@@ -563,6 +563,10 @@ def main():
             md.append(f"| {r['system']} | `{r['index_name']}` | {r['query_id']} | "
                       f"{base:.1f} | {without:.1f} | {bold} |")
         md.append("")
+        md.append("La matrice viene da una sessione separata (10 run per fase, senza il "
+                  "protocollo VACUUM del run di riferimento): i valori assoluti in ms non sono "
+                  "confrontabili con la tabella della sez. 2; la misura e' il rapporto "
+                  "con/senza indice.\n")
         md.append("Tre letture della matrice. (i) Gli indici che contano sono quelli sul "
                   "*punto di ingresso* della query: `ix_lineup_player` (Q08) e "
                   "`player_name_idx` (Q08) valgono 2-3.5x, perche' senza di essi il lookup "
@@ -788,7 +792,7 @@ def main():
     md.append("| Bulk load (~1.5M righe) | `COPY FROM STDIN`: 1 statement per tabella, nessuna dipendenza esterna | `LOAD CSV`; per le 542k `LINEUP_OF` il loader offre `apoc.periodic.iterate` (batch 5000, richiede il **plugin APOC**) oppure — come nel run di riferimento — una singola transazione monolitica, che ha bisogno dell'heap da 1 GiB |")
     md.append("| Codice di load (LOC) | 150 (`load_postgres.py`) | 240 (`load_neo4j.py`, +60%) |")
     md.append("| Relazione derivata player-team-season | `CREATE MATERIALIZED VIEW` + `REFRESH` | `MATCH ... MERGE` di aggregazione post-load |")
-    md.append("| Integrita' referenziale | **Enforced**: il `COPY` di `match_event` e' *fallito* per FK violation, rivelando 5.632 riferimenti orfani (Challenge 1) | Non esiste FK: un `MATCH` su un `Player` mancante non lega la riga e la **scarta in silenzio** — lo stesso difetto sarebbe passato inosservato |")
+    md.append("| Integrita' referenziale | **Enforced**: il `COPY` di `match_event` e' *fallito* per FK violation, rivelando 5.653 riferimenti orfani (4.632 su `player1_id` + 1.021 su `player2_id`, Challenge 1) | Non esiste FK: un `MATCH` su un `Player` mancante non lega la riga e la **scarta in silenzio** — lo stesso difetto sarebbe passato inosservato |")
     md.append("| Strumenti di analisi delle performance | `EXPLAIN (ANALYZE, BUFFERS)`: piano testuale con costi stimati/reali, buffer, tempi per nodo | `PROFILE`: albero di operatori con rows e db hits, visualizzato nel Browser |")
     md.append("| Ambiente interattivo | `psql` / pgAdmin | Neo4j Browser, con visualizzazione nativa del grafo |")
     md.append("| Curva di apprendimento | SQL: prerequisito del corso | Cypher: nuovo per entrambi gli autori; i pattern ASCII-art (`(a)-[:R]->(b)`) sono intuitivi per i traversal, meno per le aggregazioni (Q02, classifica: l'`UNION ALL` SQL diventa un `UNWIND` su una lista di mappe) |")
@@ -1055,6 +1059,12 @@ def main():
               "vero controllo empirico dell'autocorrelazione. Un warm-up singolo e' "
               "sufficiente anche per Q07 e Q10: i loro CI sono i piu' stretti del "
               "benchmark (±2% della mediana).\n")
+    md.append("- **Ordine di esecuzione**: in ogni iterazione la query gira prima su Postgres "
+              "e poi su Neo4j (interleaving), e le query si susseguono sempre da Q01 a Q12; "
+              "l'ordine non e' randomizzato. L'interleaving controlla la deriva temporale "
+              "(termica, processi di background) distribuendola su entrambi i sistemi; "
+              "l'interferenza di cache fra i due e' trascurabile perche' entrambi i "
+              "working set stanno in RAM (nessun piano mostra letture da disco).\n")
     md.append("- **Parametri per nome**: le query parametrizzate per nome (Q08-Q10, Q06) "
               "assumono che il nome sia univoco; e' verificato per i valori usati "
               "(un solo `Lionel Messi`, `Andrea Pirlo`, `Real Madrid CF`) ma non in "

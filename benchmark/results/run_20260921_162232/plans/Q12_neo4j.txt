@@ -1,0 +1,10 @@
++-- ProduceResults@neo4j  (rows: 0, dbHits: 0)
+    identifiers: ['m']
+  +-- EmptyResult@neo4j  (rows: 0, dbHits: 0)
+      identifiers: ['m']
+    +-- SetProperty@neo4j  (rows: 25979, dbHits: 51958)
+        identifiers: ['m']
+      +-- CacheProperties@neo4j  (rows: 25979, dbHits: 51958)
+          identifiers: ['m']
+        +-- NodeByLabelScan@neo4j  (rows: 25979, dbHits: 25980)
+            identifiers: ['m']

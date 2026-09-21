@@ -1,0 +1,55 @@
+Sort  (cost=3138.79..3138.84 rows=18 width=49) (actual time=1.977..1.992 rows=20.00 loops=1)
+  Sort Key: (sum((CASE WHEN (m.home_team_goal > m.away_team_goal) THEN 3 WHEN (m.home_team_goal = m.away_team_goal) THEN 1 ELSE 0 END))) DESC, ((sum(m.home_team_goal) - sum(m.away_team_goal))) DESC, t.team_long_name
+  Sort Method: quicksort  Memory: 26kB
+  Buffers: shared hit=1572
+  ->  GroupAggregate  (cost=3137.97..3138.42 rows=18 width=49) (actual time=1.811..1.978 rows=20.00 loops=1)
+        Group Key: t.team_api_id
+        Buffers: shared hit=1572
+        ->  Sort  (cost=3137.97..3138.01 rows=18 width=25) (actual time=1.794..1.856 rows=760.00 loops=1)
+              Sort Key: t.team_api_id
+              Sort Method: quicksort  Memory: 55kB
+              Buffers: shared hit=1572
+              ->  Nested Loop  (cost=612.94..3137.59 rows=18 width=25) (actual time=0.221..1.648 rows=760.00 loops=1)
+                    Buffers: shared hit=1572
+                    ->  Nested Loop  (cost=612.79..3134.57 rows=18 width=12) (actual time=0.214..0.759 rows=760.00 loops=1)
+                          Buffers: shared hit=52
+                          ->  Index Scan using league_name_key on league l  (cost=0.15..8.17 rows=1 width=4) (actual time=0.021..0.022 rows=1.00 loops=1)
+                                Index Cond: ((name)::text = 'Italy Serie A'::text)
+                                Index Searches: 1
+                                Buffers: shared hit=2
+                          ->  Append  (cost=612.64..3120.36 rows=604 width=16) (actual time=0.190..0.646 rows=760.00 loops=1)
+                                Buffers: shared hit=50
+                                ->  Bitmap Heap Scan on match m  (cost=612.64..1558.67 rows=302 width=16) (actual time=0.189..0.274 rows=380.00 loops=1)
+                                      Recheck Cond: ((league_id = l.league_id) AND ((season)::text = '2015/2016'::text))
+                                      Heap Blocks: exact=4
+                                      Buffers: shared hit=25
+                                      ->  BitmapAnd  (cost=612.64..612.64 rows=302 width=0) (actual time=0.170..0.170 rows=0.00 loops=1)
+                                            Buffers: shared hit=21
+                                            ->  Bitmap Index Scan on ix_match_league  (cost=0.00..254.13 rows=2362 width=0) (actual time=0.077..0.078 rows=3017.00 loops=1)
+                                                  Index Cond: (league_id = l.league_id)
+                                                  Index Searches: 1
+                                                  Buffers: shared hit=8
+                                            ->  Bitmap Index Scan on ix_match_season  (cost=0.00..357.36 rows=3326 width=0) (actual time=0.087..0.087 rows=3326.00 loops=1)
+                                                  Index Cond: ((season)::text = '2015/2016'::text)
+                                                  Index Searches: 1
+                                                  Buffers: shared hit=13
+                                ->  Bitmap Heap Scan on match m_1  (cost=612.64..1558.67 rows=302 width=16) (actual time=0.159..0.306 rows=380.00 loops=1)
+                                      Recheck Cond: ((league_id = l.league_id) AND ((season)::text = '2015/2016'::text))
+                                      Heap Blocks: exact=4
+                                      Buffers: shared hit=25
+                                      ->  BitmapAnd  (cost=612.64..612.64 rows=302 width=0) (actual time=0.148..0.149 rows=0.00 loops=1)
+                                            Buffers: shared hit=21
+                                            ->  Bitmap Index Scan on ix_match_league  (cost=0.00..254.13 rows=2362 width=0) (actual time=0.072..0.072 rows=3017.00 loops=1)
+                                                  Index Cond: (league_id = l.league_id)
+                                                  Index Searches: 1
+                                                  Buffers: shared hit=8
+                                            ->  Bitmap Index Scan on ix_match_season  (cost=0.00..357.36 rows=3326 width=0) (actual time=0.072..0.072 rows=3326.00 loops=1)
+                                                  Index Cond: ((season)::text = '2015/2016'::text)
+                                                  Index Searches: 1
+                                                  Buffers: shared hit=13
+                    ->  Index Scan using team_pkey on team t  (cost=0.15..0.17 rows=1 width=17) (actual time=0.001..0.001 rows=1.00 loops=760)
+                          Index Cond: (team_api_id = m.home_team_api_id)
+                          Index Searches: 760
+                          Buffers: shared hit=1520
+Planning Time: 0.817 ms
+Execution Time: 2.064 ms

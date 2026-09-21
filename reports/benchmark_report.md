@@ -1,13 +1,13 @@
 # Benchmark SQL vs Cypher — Report
 
-Run: `run_20260917_161535`
+Run: `run_20260921_162704`
 
 
 ## 1. Experimental setup
 
 | Item | Value |
 |---|---|
-| Host | `192.168.1.55` |
+| Host | `MacBook-Air-di-Peppe.local` |
 | Platform | `macOS-27.0-arm64-arm-64bit` |
 | CPU | `Apple M2` (8 cores) |
 | Memory | 8.0 GB |
@@ -54,23 +54,23 @@ Run: `run_20260917_161535`
 
 | ID | Query | Categoria | PG (ms) | Neo4j (ms) | CI 95% PG | CI 95% Neo4j | Vincitore | Speedup | p-value | Effect r | Sig | Sig (Holm) | Risultati |
 |---|---|---|---:|---:| :---: | :---: |---|---:|---:|---:|:---:|:---:|:---:|
-| Q01 | Top scorers by season | A_relational | 9.9 | 6.3 | [8.353, 12.612] | [5.984, 6.666] | **Neo4j** | 1.58x | 0.000136 | 0.8222 | Yes | Yes | OK |
-| Q02 | League standings by season | A_relational | 6.2 | 5.0 | [4.962, 6.262] | [3.334, 5.172] | **Neo4j** | 1.24x | 0.005452 | 0.6 | Yes | Yes | OK |
-| Q03 | Goals per match by league | A_relational | 4.3 | 4.4 | [2.883, 4.794] | [3.91, 6.182] | Postgres (ns) | 1.03x | 0.12486 | 0.3333 | No | No | OK |
-| Q04 | Home win percentage by team | A_relational | 12.2 | 14.6 | [11.505, 14.339] | [14.299, 15.223] | **Postgres** | 1.20x | 0.018067 | 0.5111 | Yes | Yes | OK |
-| Q05 | Goal-assist partnerships | B_multihop | 55.7 | 43.3 | [53.923, 58.078] | [39.371, 46.692] | **Neo4j** | 1.29x | 5.7e-05 | 0.8667 | Yes | Yes | OK |
-| Q06 | Cards received vs Real Madrid | B_multihop | 22.3 | 6.1 | [20.593, 24.867] | [5.596, 6.68] | **Neo4j** | 3.64x | 3.4e-05 | 0.8933 | Yes | Yes | OK |
-| Q07 | Players in all 8 seasons | B_multihop | 384.1 | 201.4 | [382.918, 387.422] | [195.839, 204.566] | **Neo4j** | 1.91x | 3e-06 | 1.0 | Yes | Yes | OK |
-| Q08 | Teammates of Messi 2015/16 | C_graph_native | 5.1 | 1.9 | [4.434, 5.563] | [1.589, 2.757] | **Neo4j** | 2.66x | 5.7e-05 | 0.8667 | Yes | Yes | OK |
-| Q09 | 2-hop teammates of Messi | C_graph_native | 32.3 | 67.6 | [30.313, 35.344] | [64.855, 69.548] | **Postgres** | 2.09x | 3e-06 | 1.0 | Yes | Yes | OK |
-| Q10 | Shortest path Messi -> Pirlo | C_graph_native | 670.5 | 11.8 | [668.514, 672.208] | [11.086, 12.619] | **Neo4j** | 56.66x | 3e-06 | 1.0 | Yes | Yes | OK |
-| Q11 | Bulk UPDATE on event subtype | D_write | 319.1 | 211.2 | [288.606, 396.614] | [206.853, 213.406] | **Neo4j** | 1.51x | 3e-06 | 1.0 | Yes | Yes | OK |
-| Q12 | Schema evolution: add totalGoals | D_write | 352.3 | 78.4 | [292.624, 423.052] | [76.066, 81.216] | **Neo4j** | 4.49x | 3e-06 | 1.0 | Yes | Yes | OK |
+| Q01 | Top scorers by season | A_relational | 10.3 | 6.9 | [9.524, 10.991] | [6.12, 7.041] | **Neo4j** | 1.51x | 0.000494 | 0.7511 | Yes | Yes | OK |
+| Q02 | League standings by season | A_relational | 3.7 | 5.1 | [3.215, 5.161] | [4.011, 5.53] | Postgres (ns) | 1.38x | 0.229029 | 0.2622 | No | No | OK |
+| Q03 | Goals per match by league | A_relational | 8.3 | 5.4 | [5.452, 11.168] | [5.147, 5.672] | **Neo4j** | 1.54x | 0.027925 | 0.4756 | Yes | No | OK |
+| Q04 | Home win percentage by team | A_relational | 15.9 | 20.7 | [13.699, 17.551] | [17.25, 21.658] | **Postgres** | 1.30x | 0.00421 | 0.6178 | Yes | Yes | OK |
+| Q05 | Goal-assist partnerships | B_multihop | 61.5 | 38.1 | [56.666, 63.986] | [35.365, 38.943] | **Neo4j** | 1.62x | 5.7e-05 | 0.8667 | Yes | Yes | OK |
+| Q06 | Cards received vs Real Madrid | B_multihop | 21.8 | 7.6 | [20.2, 24.681] | [6.628, 8.338] | **Neo4j** | 2.85x | 3e-06 | 1.0 | Yes | Yes | OK |
+| Q07 | Players in all 8 seasons | B_multihop | 400.2 | 216.1 | [393.97, 406.329] | [209.69, 230.045] | **Neo4j** | 1.85x | 3e-06 | 1.0 | Yes | Yes | OK |
+| Q08 | Teammates of Messi 2015/16 | C_graph_native | 7.0 | 4.2 | [5.729, 8.024] | [3.497, 4.933] | **Neo4j** | 1.66x | 1.3e-05 | 0.9378 | Yes | Yes | OK |
+| Q09 | 2-hop teammates of Messi | C_graph_native | 28.9 | 77.6 | [25.234, 33.324] | [74.458, 80.419] | **Postgres** | 2.68x | 3e-06 | 1.0 | Yes | Yes | OK |
+| Q10 | Shortest path Messi -> Pirlo | C_graph_native | 792.1 | 14.4 | [762.212, 831.703] | [13.777, 15.981] | **Neo4j** | 54.88x | 3e-06 | 1.0 | Yes | Yes | OK |
+| Q11 | Bulk UPDATE on event subtype | D_write | 303.1 | 195.6 | [275.291, 321.074] | [192.22, 207.387] | **Neo4j** | 1.55x | 9e-06 | 0.9556 | Yes | Yes | OK |
+| Q12 | Schema evolution: add totalGoals | D_write | 435.9 | 85.4 | [412.674, 461.902] | [82.387, 87.053] | **Neo4j** | 5.11x | 3e-06 | 1.0 | Yes | Yes | OK |
 
-Legenda: **grassetto** = differenza statisticamente significativa (p < 0.05, Mann-Whitney U); (ns) = non significativa. **Effect r** = correlazione rank-biserial (0 = distribuzioni indistinguibili, 1 = separazione completa): misura la *magnitudine* della differenza, complementare al p-value che ne misura l'affidabilita'. **Sig (Holm)** = significativita' dopo correzione di Holm-Bonferroni per i 12 confronti simultanei (family-wise error rate 0.05): 11 confronti restano significativi. Le conclusioni del report si appoggiano solo su differenze che superano la correzione E hanno effect size r >= 0.8.
+Legenda: **grassetto** = differenza statisticamente significativa (p < 0.05, Mann-Whitney U); (ns) = non significativa. **Effect r** = correlazione rank-biserial (0 = distribuzioni indistinguibili, 1 = separazione completa): misura la *magnitudine* della differenza, complementare al p-value che ne misura l'affidabilita'. **Sig (Holm)** = significativita' dopo correzione di Holm-Bonferroni per i 12 confronti simultanei (family-wise error rate 0.05): 10 confronti restano significativi. Le conclusioni del report si appoggiano solo su differenze che superano la correzione E hanno effect size r >= 0.8.
 
 
-11 confronti su 12 sono statisticamente significativi; 9 hanno effect size molto grande (r >= 0.8).
+11 confronti su 12 sono statisticamente significativi; 8 hanno effect size molto grande (r >= 0.8).
 
 
 ## 3. Tempi di esecuzione
@@ -114,11 +114,11 @@ Valori > 1 indicano che Neo4j e' piu' veloce. Barre saturate: p < 0.05; barre de
 | Q02 | 35 | 15 | 2.33x | 20 | 11 | 1.82x |
 | Q03 | 9 | 8 | 1.12x | 6 | 5 | 1.20x |
 | Q04 | 12 | 11 | 1.09x | 9 | 8 | 1.12x |
-| Q05 | 11 | 8 | 1.38x | 10 | 11 | 0.91x |
+| Q05 | 13 | 9 | 1.44x | 10 | 11 | 0.91x |
 | Q06 | 17 | 11 | 1.55x | 16 | 13 | 1.23x |
 | Q07 | 9 | 5 | 1.80x | 7 | 6 | 1.17x |
-| Q08 | 15 | 7 | 2.14x | 13 | 8 | 1.62x |
-| Q09 | 26 | 12 | 2.17x | 25 | 17 | 1.47x |
+| Q08 | 16 | 7 | 2.29x | 13 | 8 | 1.62x |
+| Q09 | 27 | 12 | 2.25x | 25 | 17 | 1.47x |
 | Q10 | 21 | 5 | 4.20x | 26 | 5 | 5.20x |
 | Q11 | 5 | 3 | 1.67x | 5 | 4 | 1.25x |
 | Q12 | 5 | 2 | 2.50x | 2 | 3 | 0.67x |
@@ -138,68 +138,72 @@ Per ogni query, il benchmark cattura `EXPLAIN (ANALYZE, BUFFERS)` per Postgres e
 **PostgreSQL** (`EXPLAIN ANALYZE`):
 
 ```
-Sort  (cost=14719.90..14727.53 rows=3053 width=36) (actual time=55.494..55.495 rows=29.00 loops=1)
-  Sort Key: (count(*)) DESC, scorer.player_name, assister.player_name
+Sort  (cost=14791.95..14799.70 rows=3102 width=44) (actual time=64.592..64.593 rows=29.00 loops=1)
+  Sort Key: (count(*)) DESC, scorer.player_name, assister.player_name, scorer.player_api_id, assister.player_api_id
   Sort Method: quicksort  Memory: 26kB
-  Buffers: shared hit=152295
-  ->  HashAggregate  (cost=14428.72..14543.19 rows=3053 width=36) (actual time=54.716..55.477 rows=29.00 loops=1)
-        Group Key: scorer.player_name, assister.player_name
+  Buffers: shared hit=152617
+  ->  HashAggregate  (cost=14495.73..14612.05 rows=3102 width=44) (actual time=63.725..64.560 rows=29.00 loops=1)
+        Group Key: scorer.player_api_id, assister.player_api_id
         Filter: (count(*) >= 10)
         Batches: 1  Memory Usage: 1305kB
         Rows Removed by Filter: 12240
-        Buffers: shared hit=152295
-        ->  Merge Join  (cost=1.14..14360.03 rows=9158 width=28) (actual time=0.030..51.719 rows=16934.00 loops=1)
+        Buffers: shared hit=152617
+        ->  Merge Join  (cost=1.14..14425.95 rows=9305 width=36) (actual time=0.039..60.823 rows=16934.00 loops=1)
               Merge Cond: (e.player2_id = assister.player_api_id)
-              Buffers: shared hit=152295
-              ->  Nested Loop  (cost=0.72..59917.88 rows=9158 width=18) (actual time=0.025..48.226 rows=16934.00 loops=1)
-                    Buffers: shared hit=141395
-                    ->  Index Scan using ix_event_player2 on match_event e  (cost=0.42..58308.48 rows=9158 width=8) (actual time=0.019..42.109 rows=17000.00 loops=1)
+              Buffers: shared hit=152617
+              ->  Nested Loop  (cost=0.72..59960.55 rows=9305 width=22) (actual time=0.033..56.737 rows=16934.00 loops=1)
+                    Buffers: shared hit=141717
+                    ->  Index Scan using ix_event_player2 on match_event e  (cost=0.42..58355.74 rows=9305 width=8) (actual time=0.025..49.507 rows=17000.00 loops=1)
                           Index Cond: (player2_id IS NOT NULL)
                           Filter: ((event_type)::text = 'goal'::text)
                           Rows Removed by Filter: 189945
                           Index Searches: 1
-                          Buffers: shared hit=132632
+                          Buffers: shared hit=132954
                     ->  Memoize  (cost=0.30..0.37 rows=1 width=18) (actual time=0.000..0.000 rows=1.00 loops=17000)
                           Cache Key: e.player1_id
                           Cache Mode: logical
-                          Hits: 14078  Misses: 2922  Evictions: 0  Overflows: 0  Memory Usage: 343kB
+                          Hits: 14078  Misses: 2922  Evictions: 0  Overflows: 0  Memory Usage: 339kB
                           Buffers: shared hit=8763
                           ->  Index Scan using player_pkey on player scorer  (cost=0.29..0.36 rows=1 width=18) (actual time=0.001..0.001 rows=1.00 loops=2922)
                                 Index Cond: (player_api_id = e.player1_id)
                                 Index Searches: 2921
                                 Buffers: shared hit=8763
-              ->  Index Scan using player_pkey on player assister  (cost=0.29..710.16 rows=11060 width=18) (actual time=0.003..1.977 rows=11045.00 loops=1)
+              ->  Index Scan using player_pkey on player assister  (cost=0.29..710.16 rows=11060 width=18) (actual time=0.004..2.409 rows=11045.00 loops=1)
                     Index Searches: 1
                     Buffers: shared hit=10900
 Planning:
   Buffers: shared hit=28
-Planning Time: 0.191 ms
-Execution Time: 55.522 ms
+Planning Time: 0.286 ms
+Execution Time: 64.650 ms
 ```
 
 **Neo4j** (`PROFILE`):
 
 ```
 +-- ProduceResults@neo4j  (rows: 29, dbHits: 0)
-    identifiers: ['scorer', 'assister', 'partnerships']
+    identifiers: ['scorer_api_id', 'assister', 'partnerships', 'assister_api_id', 'scorer']
   +-- Sort@neo4j  (rows: 29, dbHits: 0)
-      identifiers: ['scorer', 'assister', 'partnerships']
-    +-- Filter@neo4j  (rows: 29, dbHits: 0)
-        identifiers: ['scorer', 'assister', 'partnerships']
-      +-- EagerAggregation@neo4j  (rows: 12269, dbHits: 50802)
+      identifiers: ['scorer_api_id', 'assister', 'partnerships', 'assister_api_id', 'scorer']
+    +-- Projection@neo4j  (rows: 29, dbHits: 0)
+        identifiers: ['scorer_api_id', 'assister', 'partnerships', 'assister_api_id', 'scorer']
+      +-- CacheProperties@neo4j  (rows: 29, dbHits: 174)
           identifiers: ['scorer', 'assister', 'partnerships']
-        +-- Filter@neo4j  (rows: 16934, dbHits: 99860)
-            identifiers: ['assister', 'a', 'm', 'g', 'scorer']
-          +-- Expand(All)@neo4j  (rows: 65992, dbHits: 82992)
-              identifiers: ['assister', 'a', 'm', 'g', 'scorer']
-            +-- CacheProperties@neo4j  (rows: 17000, dbHits: 17014)
-                identifiers: ['assister', 'a', 'm']
-              +-- Filter@neo4j  (rows: 17000, dbHits: 34028)
-                  identifiers: ['assister', 'a', 'm']
-                +-- Expand(All)@neo4j  (rows: 17000, dbHits: 17000)
+        +-- Filter@neo4j  (rows: 29, dbHits: 0)
+            identifiers: ['scorer', 'assister', 'partnerships']
+          +-- OrderedAggregation@neo4j  (rows: 12269, dbHits: 0)
+              identifiers: ['scorer', 'assister', 'partnerships']
+            +-- Filter@neo4j  (rows: 16934, dbHits: 99860)
+                identifiers: ['assister', 'a', 'm', 'g', 'scorer']
+              +-- Expand(All)@neo4j  (rows: 65992, dbHits: 82992)
+                  identifiers: ['assister', 'a', 'm', 'g', 'scorer']
+                +-- CacheProperties@neo4j  (rows: 17000, dbHits: 17014)
                     identifiers: ['assister', 'a', 'm']
-                  +-- NodeByLabelScan@neo4j  (rows: 11060, dbHits: 11061)
-                      identifiers: ['assister']
+                  +-- Filter@neo4j  (rows: 17000, dbHits: 34028)
+                      identifiers: ['assister', 'a', 'm']
+                    +-- Expand(All)@neo4j  (rows: 17000, dbHits: 17000)
+                        identifiers: ['assister', 'a', 'm']
+                      +-- NodeByLabelScan@neo4j  (rows: 11060, dbHits: 11061)
+                          identifiers: ['assister']
 ```
 
 
@@ -208,27 +212,27 @@ Execution Time: 55.522 ms
 **PostgreSQL** (`EXPLAIN ANALYZE`):
 
 ```
-Sort  (cost=78415.99..78416.12 rows=55 width=26) (actual time=458.397..458.409 rows=539.00 loops=1)
+Sort  (cost=78404.96..78405.10 rows=55 width=26) (actual time=471.348..471.360 rows=539.00 loops=1)
   Sort Key: p.player_name, p.player_api_id
   Sort Method: quicksort  Memory: 49kB
   Buffers: shared hit=315290
-  ->  GroupAggregate  (cost=7.21..78414.40 rows=55 width=26) (actual time=13.939..457.599 rows=539.00 loops=1)
+  ->  GroupAggregate  (cost=7.21..78403.37 rows=55 width=26) (actual time=21.133..470.535 rows=539.00 loops=1)
         Group Key: p.player_api_id
         Filter: (count(DISTINCT m.season) = 8)
         Rows Removed by Filter: 10521
         Buffers: shared hit=315290
-        ->  Incremental Sort  (cost=7.21..75564.74 rows=542281 width=28) (actual time=0.959..420.405 rows=542281.00 loops=1)
+        ->  Incremental Sort  (cost=7.21..75553.71 rows=542281 width=28) (actual time=1.014..433.130 rows=542281.00 loops=1)
               Sort Key: p.player_api_id, m.season
               Presorted Key: p.player_api_id
               Full-sort Groups: 6303  Sort Method: quicksort  Average Memory: 28kB  Peak Memory: 28kB
               Pre-sorted Groups: 5710  Sort Method: quicksort  Average Memory: 29kB  Peak Memory: 29kB
               Buffers: shared hit=315290
-              ->  Merge Join  (cost=1.01..53338.82 rows=542281 width=28) (actual time=0.134..265.773 rows=542281.00 loops=1)
+              ->  Merge Join  (cost=1.01..53327.79 rows=542281 width=28) (actual time=0.136..277.359 rows=542281.00 loops=1)
                     Merge Cond: (l.player_api_id = p.player_api_id)
                     Buffers: shared hit=315290
-                    ->  Nested Loop  (cost=0.72..45824.89 rows=542281 width=14) (actual time=0.112..230.650 rows=542281.00 loops=1)
+                    ->  Nested Loop  (cost=0.72..45811.67 rows=542281 width=14) (actual time=0.114..242.031 rows=542281.00 loops=1)
                           Buffers: shared hit=304375
-                          ->  Index Scan using ix_lineup_player on match_lineup l  (cost=0.42..23784.46 rows=542281 width=8) (actual time=0.021..94.496 rows=542281.00 loops=1)
+                          ->  Index Scan using ix_lineup_player on match_lineup l  (cost=0.42..23786.45 rows=542281 width=8) (actual time=0.019..99.025 rows=542281.00 loops=1)
                                 Index Searches: 1
                                 Buffers: shared hit=228712
                           ->  Memoize  (cost=0.30..0.35 rows=1 width=14) (actual time=0.000..0.000 rows=1.00 loops=542281)
@@ -240,13 +244,13 @@ Sort  (cost=78415.99..78416.12 rows=55 width=26) (actual time=458.397..458.409 r
                                       Index Cond: (match_api_id = l.match_api_id)
                                       Index Searches: 25221
                                       Buffers: shared hit=75663
-                    ->  Index Scan using player_pkey on player p  (cost=0.29..710.16 rows=11060 width=18) (actual time=0.017..3.015 rows=11060.00 loops=1)
+                    ->  Index Scan using player_pkey on player p  (cost=0.29..710.16 rows=11060 width=18) (actual time=0.017..3.222 rows=11060.00 loops=1)
                           Index Searches: 1
                           Buffers: shared hit=10915
 Planning:
   Buffers: shared hit=28
-Planning Time: 0.790 ms
-Execution Time: 458.484 ms
+Planning Time: 0.914 ms
+Execution Time: 471.438 ms
 ```
 
 **Neo4j** (`PROFILE`):
@@ -278,99 +282,99 @@ Execution Time: 458.484 ms
 **PostgreSQL** (`EXPLAIN ANALYZE`):
 
 ```
-Limit  (cost=1485.45..1485.50 rows=20 width=22) (actual time=28.906..28.910 rows=20.00 loops=1)
+Limit  (cost=1485.45..1485.50 rows=20 width=26) (actual time=41.003..41.011 rows=20.00 loops=1)
   Buffers: shared hit=10567
   CTE direct_teammates
-    ->  HashAggregate  (cost=26.09..26.65 rows=56 width=4) (actual time=0.508..0.526 rows=57.00 loops=1)
+    ->  HashAggregate  (cost=26.09..26.65 rows=56 width=4) (actual time=0.395..0.409 rows=57.00 loops=1)
           Group Key: pf_2.player_api_id
           Batches: 1  Memory Usage: 32kB
           Buffers: shared hit=207
-          ->  Nested Loop  (cost=4.89..25.95 rows=56 width=4) (actual time=0.068..0.410 rows=183.00 loops=1)
+          ->  Nested Loop  (cost=4.89..25.95 rows=56 width=4) (actual time=0.057..0.324 rows=183.00 loops=1)
                 Buffers: shared hit=207
-                ->  Nested Loop  (cost=4.60..23.64 rows=3 width=14) (actual time=0.050..0.067 rows=8.00 loops=1)
+                ->  Nested Loop  (cost=4.60..23.64 rows=3 width=14) (actual time=0.043..0.056 rows=8.00 loops=1)
                       Buffers: shared hit=13
-                      ->  Index Scan using ix_player_name on player p_1  (cost=0.29..8.30 rows=1 width=4) (actual time=0.026..0.026 rows=1.00 loops=1)
+                      ->  Index Scan using ix_player_name on player p_1  (cost=0.29..8.30 rows=1 width=4) (actual time=0.022..0.023 rows=1.00 loops=1)
                             Index Cond: ((player_name)::text = 'Lionel Messi'::text)
                             Index Searches: 1
                             Buffers: shared hit=3
-                      ->  Bitmap Heap Scan on mv_played_for pf_3  (cost=4.31..15.31 rows=3 width=18) (actual time=0.022..0.034 rows=8.00 loops=1)
+                      ->  Bitmap Heap Scan on mv_played_for pf_3  (cost=4.31..15.31 rows=3 width=18) (actual time=0.018..0.027 rows=8.00 loops=1)
                             Recheck Cond: (player_api_id = p_1.player_api_id)
                             Heap Blocks: exact=8
                             Buffers: shared hit=10
-                            ->  Bitmap Index Scan on ix_mv_played_for_player  (cost=0.00..4.31 rows=3 width=0) (actual time=0.009..0.009 rows=8.00 loops=1)
+                            ->  Bitmap Index Scan on ix_mv_played_for_player  (cost=0.00..4.31 rows=3 width=0) (actual time=0.008..0.008 rows=8.00 loops=1)
                                   Index Cond: (player_api_id = p_1.player_api_id)
                                   Index Searches: 1
                                   Buffers: shared hit=2
-                ->  Index Scan using ix_mv_played_for_team_season on mv_played_for pf_2  (cost=0.29..0.62 rows=15 width=18) (actual time=0.008..0.035 rows=22.88 loops=8)
+                ->  Index Scan using ix_mv_played_for_team_season on mv_played_for pf_2  (cost=0.29..0.62 rows=15 width=18) (actual time=0.006..0.028 rows=22.88 loops=8)
                       Index Cond: ((team_api_id = pf_3.team_api_id) AND ((season)::text = (pf_3.season)::text))
                       Index Searches: 8
                       Buffers: shared hit=194
-  ->  Sort  (cost=1458.80..1458.95 rows=59 width=22) (actual time=28.905..28.907 rows=20.00 loops=1)
-        Sort Key: (count(*)) DESC, p.player_name
+  ->  Sort  (cost=1458.80..1458.95 rows=59 width=26) (actual time=41.002..41.005 rows=20.00 loops=1)
+        Sort Key: (count(*)) DESC, p.player_name, p.player_api_id
         Sort Method: top-N heapsort  Memory: 27kB
         Buffers: shared hit=10567
-        ->  GroupAggregate  (cost=1456.20..1457.23 rows=59 width=22) (actual time=28.357..28.736 rows=1735.00 loops=1)
-              Group Key: p.player_name
+        ->  GroupAggregate  (cost=1456.20..1457.23 rows=59 width=26) (actual time=39.422..40.444 rows=1750.00 loops=1)
+              Group Key: p.player_api_id
               Buffers: shared hit=10567
-              ->  Sort  (cost=1456.20..1456.35 rows=59 width=14) (actual time=28.354..28.424 rows=3228.00 loops=1)
-                    Sort Key: p.player_name
-                    Sort Method: quicksort  Memory: 97kB
+              ->  Sort  (cost=1456.20..1456.35 rows=59 width=18) (actual time=39.414..39.623 rows=3228.00 loops=1)
+                    Sort Key: p.player_api_id
+                    Sort Method: quicksort  Memory: 217kB
                     Buffers: shared hit=10567
-                    ->  Nested Loop  (cost=682.52..1454.47 rows=59 width=14) (actual time=2.107..23.156 rows=3228.00 loops=1)
+                    ->  Nested Loop  (cost=682.52..1454.47 rows=59 width=18) (actual time=1.908..38.131 rows=3228.00 loops=1)
                           Buffers: shared hit=10567
-                          ->  Hash Join  (cost=682.23..1434.64 rows=59 width=4) (actual time=2.094..16.396 rows=3228.00 loops=1)
+                          ->  Hash Join  (cost=682.23..1434.64 rows=59 width=4) (actual time=1.897..22.671 rows=3228.00 loops=1)
                                 Hash Cond: ((pf.team_api_id = pf_1.team_api_id) AND ((pf.season)::text = (pf_1.season)::text))
                                 Buffers: shared hit=883
-                                ->  Seq Scan on mv_played_for pf  (cost=1.26..661.79 rows=17501 width=18) (actual time=0.606..9.030 rows=34656.00 loops=1)
+                                ->  Seq Scan on mv_played_for pf  (cost=1.26..661.79 rows=17501 width=18) (actual time=0.471..12.672 rows=34656.00 loops=1)
                                       Filter: (NOT (ANY (player_api_id = (hashed SubPlan 2).col1)))
                                       Rows Removed by Filter: 346
                                       Buffers: shared hit=430
                                       SubPlan 2
-                                        ->  CTE Scan on direct_teammates  (cost=0.00..1.12 rows=56 width=4) (actual time=0.510..0.557 rows=57.00 loops=1)
+                                        ->  CTE Scan on direct_teammates  (cost=0.00..1.12 rows=56 width=4) (actual time=0.397..0.430 rows=57.00 loops=1)
                                               Storage: Memory  Maximum Storage: 18kB
                                               Buffers: shared hit=207
-                                ->  Hash  (cost=678.23..678.23 rows=183 width=14) (actual time=1.460..1.461 rows=146.00 loops=1)
+                                ->  Hash  (cost=678.23..678.23 rows=183 width=14) (actual time=1.403..1.405 rows=146.00 loops=1)
                                       Buckets: 1024  Batches: 1  Memory Usage: 15kB
                                       Buffers: shared hit=453
-                                      ->  Unique  (cost=676.85..678.23 rows=183 width=14) (actual time=1.226..1.396 rows=146.00 loops=1)
+                                      ->  Unique  (cost=676.85..678.23 rows=183 width=14) (actual time=1.243..1.360 rows=146.00 loops=1)
                                             Buffers: shared hit=453
-                                            ->  Sort  (cost=676.85..677.31 rows=183 width=14) (actual time=1.225..1.276 rows=346.00 loops=1)
+                                            ->  Sort  (cost=676.85..677.31 rows=183 width=14) (actual time=1.242..1.278 rows=346.00 loops=1)
                                                   Sort Key: pf_1.team_api_id, pf_1.season
                                                   Sort Method: quicksort  Memory: 35kB
                                                   Buffers: shared hit=453
-                                                  ->  Nested Loop  (cost=0.29..669.98 rows=183 width=14) (actual time=0.009..0.661 rows=346.00 loops=1)
+                                                  ->  Nested Loop  (cost=0.29..669.98 rows=183 width=14) (actual time=0.009..0.717 rows=346.00 loops=1)
                                                         Buffers: shared hit=453
                                                         ->  CTE Scan on direct_teammates d  (cost=0.00..1.12 rows=56 width=4) (actual time=0.000..0.014 rows=57.00 loops=1)
                                                               Storage: Memory  Maximum Storage: 18kB
-                                                        ->  Index Scan using ix_mv_played_for_player on mv_played_for pf_1  (cost=0.29..11.91 rows=3 width=18) (actual time=0.004..0.009 rows=6.07 loops=57)
+                                                        ->  Index Scan using ix_mv_played_for_player on mv_played_for pf_1  (cost=0.29..11.91 rows=3 width=18) (actual time=0.004..0.010 rows=6.07 loops=57)
                                                               Index Cond: (player_api_id = d.player_api_id)
                                                               Index Searches: 57
                                                               Buffers: shared hit=453
-                          ->  Index Scan using player_pkey on player p  (cost=0.29..0.34 rows=1 width=18) (actual time=0.002..0.002 rows=1.00 loops=3228)
+                          ->  Index Scan using player_pkey on player p  (cost=0.29..0.34 rows=1 width=18) (actual time=0.004..0.004 rows=1.00 loops=3228)
                                 Index Cond: (player_api_id = pf.player_api_id)
                                 Filter: ((player_name)::text <> 'Lionel Messi'::text)
                                 Index Searches: 3228
                                 Buffers: shared hit=9684
 Planning:
   Buffers: shared hit=36
-Planning Time: 1.562 ms
-Execution Time: 29.018 ms
+Planning Time: 1.350 ms
+Execution Time: 41.127 ms
 ```
 
 **Neo4j** (`PROFILE`):
 
 ```
 +-- ProduceResults@neo4j  (rows: 20, dbHits: 0)
-    identifiers: ['player_2hop', 'connection_strength']
+    identifiers: ['player_2hop_api_id', 'player_2hop', 'connection_strength']
   +-- Top@neo4j  (rows: 20, dbHits: 0)
-      identifiers: ['player_2hop', 'connection_strength']
-    +-- EagerAggregation@neo4j  (rows: 1735, dbHits: 0)
-        identifiers: ['player_2hop', 'connection_strength']
+      identifiers: ['player_2hop_api_id', 'player_2hop', 'connection_strength']
+    +-- EagerAggregation@neo4j  (rows: 1750, dbHits: 0)
+        identifiers: ['player_2hop_api_id', 'player_2hop', 'connection_strength']
       +-- Filter@neo4j  (rows: 3228, dbHits: 110424)
           identifiers: ['x', 't3', 'r4', 'p2', 'direct_set', 'covered_pairs']
         +-- Expand(All)@neo4j  (rows: 34656, dbHits: 34656)
             identifiers: ['x', 't3', 'r4', 'p2', 'direct_set', 'covered_pairs']
-          +-- CacheProperties@neo4j  (rows: 11003, dbHits: 11005)
+          +-- CacheProperties@neo4j  (rows: 11003, dbHits: 22010)
               identifiers: ['x', 'direct_set', 'covered_pairs', 'p2']
             +-- Filter@neo4j  (rows: 11003, dbHits: 0)
                 identifiers: ['x', 'direct_set', 'covered_pairs', 'p2']
@@ -412,42 +416,42 @@ Execution Time: 29.018 ms
 **PostgreSQL** (`EXPLAIN ANALYZE`):
 
 ```
-Aggregate  (cost=621.74..621.75 rows=1 width=4) (actual time=835.902..835.904 rows=1.00 loops=1)
+Aggregate  (cost=621.74..621.75 rows=1 width=4) (actual time=1042.923..1042.927 rows=1.00 loops=1)
   Buffers: shared hit=2977128
   CTE endpoints
-    ->  Result  (cost=16.61..16.62 rows=1 width=8) (actual time=0.009..0.009 rows=1.00 loops=1)
+    ->  Result  (cost=16.61..16.62 rows=1 width=8) (actual time=0.016..0.018 rows=1.00 loops=1)
           Buffers: shared hit=6
           InitPlan 1
-            ->  Limit  (cost=0.29..8.30 rows=1 width=4) (actual time=0.004..0.005 rows=1.00 loops=1)
+            ->  Limit  (cost=0.29..8.30 rows=1 width=4) (actual time=0.008..0.009 rows=1.00 loops=1)
                   Buffers: shared hit=3
-                  ->  Index Scan using ix_player_name on player  (cost=0.29..8.30 rows=1 width=4) (actual time=0.004..0.004 rows=1.00 loops=1)
+                  ->  Index Scan using ix_player_name on player  (cost=0.29..8.30 rows=1 width=4) (actual time=0.007..0.007 rows=1.00 loops=1)
                         Index Cond: ((player_name)::text = 'Lionel Messi'::text)
                         Index Searches: 1
                         Buffers: shared hit=3
           InitPlan 2
-            ->  Limit  (cost=0.29..8.30 rows=1 width=4) (actual time=0.004..0.004 rows=1.00 loops=1)
+            ->  Limit  (cost=0.29..8.30 rows=1 width=4) (actual time=0.007..0.007 rows=1.00 loops=1)
                   Buffers: shared hit=3
-                  ->  Index Scan using ix_player_name on player player_1  (cost=0.29..8.30 rows=1 width=4) (actual time=0.004..0.004 rows=1.00 loops=1)
+                  ->  Index Scan using ix_player_name on player player_1  (cost=0.29..8.30 rows=1 width=4) (actual time=0.007..0.007 rows=1.00 loops=1)
                         Index Cond: ((player_name)::text = 'Andrea Pirlo'::text)
                         Index Searches: 1
                         Buffers: shared hit=3
   CTE bfs
-    ->  Recursive Union  (cost=0.00..565.23 rows=1771 width=8) (actual time=0.010..832.055 rows=44251.00 loops=1)
+    ->  Recursive Union  (cost=0.00..565.23 rows=1771 width=8) (actual time=0.017..1038.010 rows=44251.00 loops=1)
           Storage: Memory  Maximum Storage: 948kB
           Buffers: shared hit=2977128
-          ->  CTE Scan on endpoints  (cost=0.00..0.02 rows=1 width=8) (actual time=0.009..0.009 rows=1.00 loops=1)
+          ->  CTE Scan on endpoints  (cost=0.00..0.02 rows=1 width=8) (actual time=0.017..0.017 rows=1.00 loops=1)
                 Storage: Memory  Maximum Storage: 17kB
                 Buffers: shared hit=6
-          ->  Nested Loop  (cost=4.60..54.75 rows=177 width=8) (actual time=0.032..92.979 rows=371901.29 loops=7)
+          ->  Nested Loop  (cost=4.60..54.75 rows=177 width=8) (actual time=0.040..115.449 rows=371901.29 loops=7)
                 Join Filter: (pf2.player_api_id <> b.player_api_id)
                 Rows Removed by Join Filter: 15840
                 Buffers: shared hit=2977122
-                ->  Nested Loop  (cost=4.31..46.24 rows=10 width=22) (actual time=0.030..11.794 rows=15839.86 loops=7)
+                ->  Nested Loop  (cost=4.31..46.24 rows=10 width=22) (actual time=0.038..14.199 rows=15839.86 loops=7)
                       Buffers: shared hit=176237
-                      ->  WorkTable Scan on bfs b  (cost=0.00..0.22 rows=3 width=8) (actual time=0.027..0.791 rows=4741.57 loops=7)
+                      ->  WorkTable Scan on bfs b  (cost=0.00..0.22 rows=3 width=8) (actual time=0.035..0.368 rows=4741.57 loops=7)
                             Filter: (distance < 6)
                             Rows Removed by Filter: 1580
-                      ->  Bitmap Heap Scan on mv_played_for pf1  (cost=4.31..15.31 rows=3 width=18) (actual time=0.001..0.002 rows=3.34 loops=33191)
+                      ->  Bitmap Heap Scan on mv_played_for pf1  (cost=4.31..15.31 rows=3 width=18) (actual time=0.002..0.002 rows=3.34 loops=33191)
                             Recheck Cond: (player_api_id = b.player_api_id)
                             Heap Blocks: exact=109855
                             Buffers: shared hit=176237
@@ -462,15 +466,15 @@ Aggregate  (cost=621.74..621.75 rows=1 width=4) (actual time=835.902..835.904 ro
   InitPlan 5
     ->  CTE Scan on endpoints endpoints_1  (cost=0.00..0.02 rows=1 width=4) (actual time=0.000..0.000 rows=1.00 loops=1)
           Storage: Memory  Maximum Storage: 17kB
-  ->  CTE Scan on bfs  (cost=0.00..39.85 rows=9 width=4) (actual time=1.135..835.899 rows=5.00 loops=1)
+  ->  CTE Scan on bfs  (cost=0.00..39.85 rows=9 width=4) (actual time=1.445..1042.917 rows=5.00 loops=1)
         Filter: (player_api_id = (InitPlan 5).col1)
         Rows Removed by Filter: 44246
         Storage: Memory  Maximum Storage: 1895kB
         Buffers: shared hit=2977128
 Planning:
   Buffers: shared hit=12
-Planning Time: 0.169 ms
-Execution Time: 835.933 ms
+Planning Time: 0.274 ms
+Execution Time: 1042.965 ms
 ```
 
 **Neo4j** (`PROFILE`):
@@ -487,7 +491,7 @@ Execution Time: 835.933 ms
 ```
 
 
-I plan completi per tutte le 12 query sono in `benchmark/results/run_20260917_161535/plans/`.
+I plan completi per tutte le 12 query sono in `benchmark/results/run_20260921_162704/plans/`.
 
 
 ## 8. Verifica di correttezza
@@ -518,6 +522,8 @@ Matrice di ablazione: per ciascuna coppia (indice, query), il benchmark rimuove 
 | neo4j | `match_season_idx` | Q03 | 8.5 | 13.9 | **1.64x** |
 | neo4j | `team_name_idx` | Q06 | 6.2 | 3.8 | 0.62x |
 
+La matrice viene da una sessione separata (10 run per fase, senza il protocollo VACUUM del run di riferimento): i valori assoluti in ms non sono confrontabili con la tabella della sez. 2; la misura e' il rapporto con/senza indice.
+
 Tre letture della matrice. (i) Gli indici che contano sono quelli sul *punto di ingresso* della query: `ix_lineup_player` (Q08) e `player_name_idx` (Q08) valgono 2-3.5x, perche' senza di essi il lookup del giocatore diventa una scansione di 542k righe / 11k nodi. (ii) Gli indici sulla materialized view contano poco per Q09/Q10 (1.0-1.2x): la BFS di Q10 e' dominata dall'espansione della frontiera, non dal lookup iniziale, e Postgres ripiega su hash join efficienti. (iii) **L'anomalia di `team_name_idx` su Q06 (0.62x: senza indice e' piu' veloce)** non e' un errore di misura: `Team` ha 299 nodi, e un `NodeByLabelScan` con filtro in memoria su 299 record costa meno di un `NodeIndexSeek` (discesa nell'albero dell'indice + dereferenziazione). Sotto una certa cardinalita' l'indice e' controproducente — lo stesso motivo per cui il planner di Postgres preferisce un Seq Scan su tabelle piccole.
 
 
@@ -539,7 +545,7 @@ Q07 e' stata rieseguita solo su Postgres (15 run + warm-up per configurazione, `
 
 **Risultato: ipotesi smentita.** Eliminare lo spill (il sort passa a quicksort interamente in memoria) sposta la mediana dello 0.1%: su macOS i file temporanei restano nella page cache del sistema operativo e l'external merge non paga I/O fisico. Il collo di bottiglia era la strategia *sort-based* scelta dal planner per `COUNT(DISTINCT)`, non il disco.
 
-**La causa vera era a monte, nella semantica.** L'audit di equivalenza (sez. 8) ha mostrato che raggruppare per *nome* fonde i 163 omonimi del dataset (14 risultati fittizi su 550); la formulazione corretta raggruppa per `player_api_id`. Con la chiave intera e indicizzata (`ix_lineup_player`) il planner abbandona il sort completo per un **Incremental Sort** sui gruppi gia' ordinati dall'indice — nel run di riferimento il piano riporta `quicksort  Average Memory: 29kB  Peak Memory: 29kB`, nessuno spill — e la mediana Postgres scende a 384 ms (era 1211). Il gap con Neo4j su Q07 si riduce a **1.9x**: una parte sostanziale del vantaggio misurato in precedenza era il costo di un sort su testo con collation, cioe' un bug semantico travestito da caratteristica di performance. E' l'argomento piu' forte del report a favore della verifica di equivalenza come prerequisito di qualunque benchmark.
+**La causa vera era a monte, nella semantica.** L'audit di equivalenza (sez. 8) ha mostrato che raggruppare per *nome* fonde i 163 omonimi del dataset (14 risultati fittizi su 550); la formulazione corretta raggruppa per `player_api_id`. Con la chiave intera e indicizzata (`ix_lineup_player`) il planner abbandona il sort completo per un **Incremental Sort** sui gruppi gia' ordinati dall'indice — nel run di riferimento il piano riporta `quicksort  Average Memory: 29kB  Peak Memory: 29kB`, nessuno spill — e la mediana Postgres scende a 400 ms (era 1211). Il gap con Neo4j su Q07 si riduce a **1.9x**: una parte sostanziale del vantaggio misurato in precedenza era il costo di un sort su testo con collation, cioe' un bug semantico travestito da caratteristica di performance. E' l'argomento piu' forte del report a favore della verifica di equivalenza come prerequisito di qualunque benchmark.
 
 
 ### 10.2 La semantica dello shortest path in Cypher (Q10)
@@ -565,7 +571,7 @@ Verifica semantica su 8 coppie di giocatori, confrontando gli hop con la BFS SQL
 | Neymar → Antonio Di Natale | 2 | 2 | 2 | ok |
 | Sergio Ramos → Eden Hazard | 2 | 2 | 2 | ok |
 
-**Risultato.** La semantica lasca (V0) da' una risposta diversa dal SQL su 1/8 coppie; V2 coincide su 8/8. Esempio: Zlatan Ibrahimovic → Manuel Neuer dista 3 hop di veri compagni di squadra, ma la formulazione lasca risponde 2, passando per una squadra in cui i due intermedi non hanno mai giocato insieme. V1 e' corretta ma pericolosa: il suo piano contiene un ramo `VarLengthExpand` che scatta quando il cammino lasco piu' corto viola il predicato, degenerando in un'enumerazione esaustiva di tutti i cammini fino a 12 archi (~200^6 con il grado medio dei nodi `Team`): in un test senza timeout ha saturato la macchina. **Il benchmark adotta V2**: il vincolo `r1.season = r2.season` e' scritto *dentro* il gruppo ripetuto del quantified path pattern (sintassi GQL), il planner usa l'operatore dedicato `StatefulShortestPath` e il costo dell'esattezza e' 5.7x rispetto alla versione lasca — contro un gap di 60x con Postgres.
+**Risultato.** La semantica lasca (V0) da' una risposta diversa dal SQL su 1/8 coppie; V2 coincide su 8/8. Esempio: Zlatan Ibrahimovic → Manuel Neuer dista 3 hop di veri compagni di squadra, ma la formulazione lasca risponde 2, passando per una squadra in cui i due intermedi non hanno mai giocato insieme. V1 e' corretta ma pericolosa: il suo piano contiene un ramo `VarLengthExpand` che scatta quando il cammino lasco piu' corto viola il predicato, degenerando in un'enumerazione esaustiva di tutti i cammini fino a 12 archi (~200^6 con il grado medio dei nodi `Team`): in un test senza timeout ha saturato la macchina. **Il benchmark adotta V2**: il vincolo `r1.season = r2.season` e' scritto *dentro* il gruppo ripetuto del quantified path pattern (sintassi GQL), il planner usa l'operatore dedicato `StatefulShortestPath` e il costo dell'esattezza e' 5.7x rispetto alla versione lasca — contro un gap di 71x con Postgres.
 
 Due lezioni. Primo: la verifica di equivalenza su *una* istanza dei parametri e' necessaria ma non sufficiente — i vincoli fra elementi consecutivi di un cammino sono il punto in cui SQL e Cypher divergono piu' facilmente. Secondo: in un graph database la semantica si codifica nella *topologia* o nel *pattern*, non in un filtro a posteriori; il modello alternativo (un nodo `TeamSeason` al posto della proprieta' `season` sulla relazione) renderebbe il vincolo strutturale e la formulazione lasca semplicemente inesprimibile.
 
@@ -582,6 +588,8 @@ Le due query piu' veloci del benchmark (Q01, Q02: mediane fra 4 e 25 ms) sono an
 | `run_20260916_182818` | 15 | no | 23.2 | 7.4 | 3e-06 | 4.8 | 4.4 | 0.868226 |
 | `run_20260916_183215` | 15 | si | 10.3 | 5.8 | 3e-06 | 5.2 | 4.9 | 0.12486 |
 | `run_20260917_161535` | 15 | si | 9.9 | 6.3 | 0.000136 | 6.2 | 5.0 | 0.005452 |
+| `run_20260921_162232` | 15 | si | 15.9 | 11.4 | 0.031017 | 3.3 | 8.6 | 3e-06 |
+| `run_20260921_162704` | 15 | si | 10.3 | 6.9 | 0.000494 | 3.7 | 5.1 | 0.229029 |
 
 **Causa individuata: bloat MVCC generato dal benchmark stesso.** Q11 aggiorna ~21k righe di `match_event` (gli eventi `goal`) e Q12 tutte le 26k righe di `match`; nei run fino al 16/09 entrambe venivano rolled back, ma in Postgres il rollback **non rimuove** le versioni di tupla create dall'`UPDATE`: ogni run lasciava 16 x ~21k tuple morte esattamente sulle pagine che Q01 scansiona. `pg_stat_user_tables` lo conferma (oltre 1,29 milioni di `n_tup_upd` su `match_event`, 1,45 milioni su `match`), e l'autovacuum e' intervenuto solo *dopo* i due run consecutivi del 16/09 — durante i quali la mediana di Q01 su Postgres e' salita da 10,8 a 16,0 e poi 23,2 ms. Neo4j non ha l'effetto: una transazione annullata non lascia garbage nello store, e una committata sovrascrive la proprieta' in place.
 
@@ -602,7 +610,7 @@ La terza dimensione dichiarata nella proposal e' l'ease-of-use dei due sistemi. 
 | Bulk load (~1.5M righe) | `COPY FROM STDIN`: 1 statement per tabella, nessuna dipendenza esterna | `LOAD CSV`; per le 542k `LINEUP_OF` il loader offre `apoc.periodic.iterate` (batch 5000, richiede il **plugin APOC**) oppure — come nel run di riferimento — una singola transazione monolitica, che ha bisogno dell'heap da 1 GiB |
 | Codice di load (LOC) | 150 (`load_postgres.py`) | 240 (`load_neo4j.py`, +60%) |
 | Relazione derivata player-team-season | `CREATE MATERIALIZED VIEW` + `REFRESH` | `MATCH ... MERGE` di aggregazione post-load |
-| Integrita' referenziale | **Enforced**: il `COPY` di `match_event` e' *fallito* per FK violation, rivelando 5.632 riferimenti orfani (Challenge 1) | Non esiste FK: un `MATCH` su un `Player` mancante non lega la riga e la **scarta in silenzio** — lo stesso difetto sarebbe passato inosservato |
+| Integrita' referenziale | **Enforced**: il `COPY` di `match_event` e' *fallito* per FK violation, rivelando 5.653 riferimenti orfani (4.632 su `player1_id` + 1.021 su `player2_id`, Challenge 1) | Non esiste FK: un `MATCH` su un `Player` mancante non lega la riga e la **scarta in silenzio** — lo stesso difetto sarebbe passato inosservato |
 | Strumenti di analisi delle performance | `EXPLAIN (ANALYZE, BUFFERS)`: piano testuale con costi stimati/reali, buffer, tempi per nodo | `PROFILE`: albero di operatori con rows e db hits, visualizzato nel Browser |
 | Ambiente interattivo | `psql` / pgAdmin | Neo4j Browser, con visualizzazione nativa del grafo |
 | Curva di apprendimento | SQL: prerequisito del corso | Cypher: nuovo per entrambi gli autori; i pattern ASCII-art (`(a)-[:R]->(b)`) sono intuitivi per i traversal, meno per le aggregazioni (Q02, classifica: l'`UNION ALL` SQL diventa un `UNWIND` su una lista di mappe) |
@@ -627,7 +635,7 @@ Il benchmark e' single-node e single-user (8 GB di RAM, working set interamente 
 
 - **Aggregazioni full-scan (Q07)**: Postgres scandisce le 542.281 righe di formazione e le aggrega con un *Incremental Sort* guidato dall'indice su `player_api_id` (nessuno spill, sez. 10.1): il costo e' lineare nelle righe piu' un sort per gruppo di dimensione costante. A 10x (80 stagioni) il rimedio standard e' il partizionamento dichiarativo per `season`. Neo4j aggrega le stesse relazioni in modo lineare, ma **senza meccanismo di spill**: il grafo deve stare nella pagecache, altrimenti il degrado e' brusco.
 
-- **Traversal a profondita' variabile (Q10)**: la CTE ricorsiva materializza l'intera frontiera BFS — 44.251 stati e 2.977.128 accessi al buffer per profondita' <= 6 — un costo che cresce con la dimensione del grafo *e* esponenzialmente con la profondita'. `SHORTEST 1` (operatore `StatefulShortestPath`, BFS sul pattern) tocca 4.402 db hits: il lavoro dipende dalla lunghezza del cammino e dal grado dei nodi attraversati, **non dalla dimensione totale del grafo**. E' l'index-free adjacency letta come proprieta' di scaling: il 57x osservato non e' un artefatto della taglia del dataset ma tende ad *allargarsi* al crescere dei dati.
+- **Traversal a profondita' variabile (Q10)**: la CTE ricorsiva materializza l'intera frontiera BFS — 44.251 stati e 2.977.128 accessi al buffer per profondita' <= 6 — un costo che cresce con la dimensione del grafo *e* esponenzialmente con la profondita'. `SHORTEST 1` (operatore `StatefulShortestPath`, BFS sul pattern) tocca 4.402 db hits: il lavoro dipende dalla lunghezza del cammino e dal grado dei nodi attraversati, **non dalla dimensione totale del grafo**. E' l'index-free adjacency letta come proprieta' di scaling: il 55x osservato non e' un artefatto della taglia del dataset ma tende ad *allargarsi* al crescere dei dati.
 
   Evidenza empirica (le 8 coppie del sweep di sez. 10.2, una esecuzione ciascuna, semantica esatta in entrambi i sistemi):
 
@@ -648,14 +656,14 @@ Il benchmark e' single-node e single-user (8 GB di RAM, working set interamente 
 
   | Query | Stagioni | Postgres (ms) | Neo4j (ms) | Rapporto PG/Neo4j | Righe |
   |---|---:|---:|---:|---:|---:|
-  | Q07-scaled | 2 | 114 | 80 | 1.42x | 3065 |
-  | Q07-scaled | 4 | 194 | 96 | 2.03x | 1628 |
-  | Q07-scaled | 8 | 372 | 105 | 3.53x | 539 |
-  | Q09-scaled | 2 | 16 | 21 | 0.79x | 20 |
-  | Q09-scaled | 4 | 19 | 29 | 0.66x | 20 |
-  | Q09-scaled | 8 | 39 | 67 | 0.58x | 20 |
+  | Q07-scaled | 2 | 124 | 77 | 1.61x | 3065 |
+  | Q07-scaled | 4 | 207 | 78 | 2.66x | 1628 |
+  | Q07-scaled | 8 | 409 | 110 | 3.71x | 539 |
+  | Q09-scaled | 2 | 16 | 25 | 0.62x | 20 |
+  | Q09-scaled | 4 | 24 | 34 | 0.70x | 20 |
+  | Q09-scaled | 8 | 42 | 81 | 0.52x | 20 |
 
-  Da 2 a 8 stagioni (4x i dati) il tempo di Q07 cresce di 3.3x su Postgres e di 1.3x su Neo4j: l'aggregazione sulle relazioni e' quasi insensibile alla taglia, quella sort-based sulle righe e' lineare — **il vantaggio di Neo4j si allarga con i dati**. Su Q09 crescono entrambi (2.4x Postgres, 3.2x Neo4j) e Postgres resta davanti a ogni taglia: il join a profondita' fissa scala meglio del traversal con la lista `IN` delle coppie coperte, che si allunga con le stagioni.
+  Da 2 a 8 stagioni (4x i dati) il tempo di Q07 cresce di 3.3x su Postgres e di 1.4x su Neo4j: l'aggregazione sulle relazioni e' quasi insensibile alla taglia, quella sort-based sulle righe e' lineare — **il vantaggio di Neo4j si allarga con i dati**. Su Q09 crescono entrambi (2.7x Postgres, 3.3x Neo4j) e Postgres resta davanti a ogni taglia: il join a profondita' fissa scala meglio del traversal con la lista `IN` delle coppie coperte, che si allunga con le stagioni.
 
 - **Scritture (Q11/Q12)**: in Postgres ogni `UPDATE` crea nuove versioni di tupla (MVCC) da ripulire con `VACUUM`; in Neo4j la scrittura passa dal transaction log. Entrambi i sistemi sono stati misurati con un solo writer: sotto scrittori concorrenti entrano in gioco lock a livello di riga (Postgres) e di nodo/relazione (Neo4j), non testati.
 
@@ -663,7 +671,7 @@ Il benchmark e' single-node e single-user (8 GB di RAM, working set interamente 
 
 - **PostgreSQL**: la replica in streaming scala le *letture* senza toccare le query (l'intero benchmark read girerebbe invariato su una replica). Lo sharding dei *dati* (Citus) richiede una chiave di distribuzione; i join multi-hop di Q09/Q10 fra shard diversi diventano join di rete e degradano.
 
-- **Neo4j**: il causal cluster replica l'**intero grafo** su ogni core member — scala le letture, non i dati. Il partizionamento reale (Fabric / composite database) e' manuale, e un traversal che attraversa una partizione perde l'index-free adjacency. E' il limite noto dei graph database: il partizionamento di un grafo minimizzando gli archi tagliati e' un problema NP-hard, e la proprieta' che rende Q10 57x piu' veloce su un nodo e' esattamente quella che **non si distribuisce gratis**.
+- **Neo4j**: il causal cluster replica l'**intero grafo** su ogni core member — scala le letture, non i dati. Il partizionamento reale (Fabric / composite database) e' manuale, e un traversal che attraversa una partizione perde l'index-free adjacency. E' il limite noto dei graph database: il partizionamento di un grafo minimizzando gli archi tagliati e' un problema NP-hard, e la proprieta' che rende Q10 55x piu' veloce su un nodo e' esattamente quella che **non si distribuisce gratis**.
 
 ### Verdetto
 
@@ -675,10 +683,10 @@ A 10x i dati (80 stagioni, ~5M formazioni, ~9M eventi) entrambi i sistemi restan
 Sei risultati emersi dai dati:
 
 
-1. **Le aggregazioni OLAP-light (categoria A) sono parita' operativa**: in questo run 1 query su 4 significativamente a favore di Postgres (Q04), 2 a favore di Neo4j (Q01, Q02), 1 non significative (Q03); tutte le mediane sono sotto i 15 ms e il vincitore cambia da un run all'altro (sez. 10.3: in altri run Q03 e Q04 andavano a Postgres). A questa scala l'ottimizzatore relazionale non ha un vantaggio *misurabile* su join di 2-3 tabelle con aggregazione semplice. Il vantaggio netto di Postgres emerge invece dove il join su indici B-tree batte il traversal a profondita' *fissa*: Q09 (2.1x, r = 1.0, stabile in tutti i run).
+1. **Le aggregazioni OLAP-light (categoria A) sono parita' operativa**: in questo run 1 query su 4 significativamente a favore di Postgres (Q04), 2 a favore di Neo4j (Q01, Q03), 1 non significative (Q02); tutte le mediane sono sotto i 21 ms e il vincitore cambia da un run all'altro (sez. 10.3: in altri run Q03 e Q04 andavano a Postgres). A questa scala l'ottimizzatore relazionale non ha un vantaggio *misurabile* su join di 2-3 tabelle con aggregazione semplice. Il vantaggio netto di Postgres emerge invece dove il join su indici B-tree batte il traversal a profondita' *fissa*: Q09 (2.7x, r = 1.0, stabile in tutti i run).
 
 
-2. **Neo4j domina sul traversal a profondita' variabile** (Q10): **56.7x piu' veloce**, con semantica *identica* al SQL (vincolo di stagione dentro il quantified path pattern, sez. 10.2). I piani catturati mostrano il perche': la CTE ricorsiva di Postgres materializza l'intera frontiera BFS (decine di migliaia di stati, milioni di accessi al buffer), mentre `SHORTEST 1` esplora solo il vicinato del cammino (poche migliaia di db hits). E' l'effetto dell'index-free adjacency.
+2. **Neo4j domina sul traversal a profondita' variabile** (Q10): **54.9x piu' veloce**, con semantica *identica* al SQL (vincolo di stagione dentro il quantified path pattern, sez. 10.2). I piani catturati mostrano il perche': la CTE ricorsiva di Postgres materializza l'intera frontiera BFS (decine di migliaia di stati, milioni di accessi al buffer), mentre `SHORTEST 1` esplora solo il vicinato del cammino (poche migliaia di db hits). E' l'effetto dell'index-free adjacency.
 
 
 3. **Neo4j vince anche sull'aggregazione full-scan** (Q07, 1.9x), ma per una ragione diversa dal traversal: Postgres deve ordinare (per gruppo) 542k righe di formazione per il `COUNT(DISTINCT season)`, Neo4j aggrega le stesse relazioni con hash aggregation. Il gap era 7.4x con la formulazione originale per *nome*: la correzione semantica (raggruppare per chiave) ha eliminato un sort su testo con spill su disco e lo ha ridotto a quello attuale (sez. 10.1) — `work_mem` non c'entrava.
@@ -690,7 +698,7 @@ Sei risultati emersi dai dati:
 5. **Espressivita'**: Cypher e' sistematicamente piu' breve del SQL equivalente. Il caso estremo e' Q10: 5 LOC / 5 operatori logici in Cypher contro 21 LOC / 26 operatori in SQL (CTE ricorsiva BFS).
 
 
-6. **Schema flexibility** (Q12): aggiungere e materializzare un attributo derivato su tutti i match costa ~78 ms in Neo4j (singolo `SET`, commit incluso) vs ~352 ms in Postgres (`ALTER TABLE` + `UPDATE` + commit). Misurato fino al commit: con il solo rollback il rapporto sarebbe gonfiato a oltre 11x, perche' Neo4j applica le mutazioni allo store solo al commit (sez. 14). Rilevante in contesti con schema evolution frequente; per un attributo *non* materializzato Postgres 18 offre le colonne generate virtuali, istantanee.
+6. **Schema flexibility** (Q12): aggiungere e materializzare un attributo derivato su tutti i match costa ~85 ms in Neo4j (singolo `SET`, commit incluso) vs ~436 ms in Postgres (`ALTER TABLE` + `UPDATE` + commit). Misurato fino al commit: con il solo rollback il rapporto sarebbe gonfiato a oltre 11x, perche' Neo4j applica le mutazioni allo store solo al commit (sez. 14). Rilevante in contesti con schema evolution frequente; per un attributo *non* materializzato Postgres 18 offre le colonne generate virtuali, istantanee.
 
 
 **Verdetto operativo**:
@@ -712,6 +720,8 @@ Sei risultati emersi dai dati:
 - **Variabilita' di misurazione e stabilita' fra run**: le query con mediane sotto i 25 ms (Q01, Q02, Q03, Q04, Q08) hanno vincitori che possono cambiare da una sessione all'altra anche quando il test di Mann-Whitney li dichiara significativi entro il singolo run (sez. 10.3). Le conclusioni del report si appoggiano solo sulle differenze con effect size r >= 0.8, stabili in tutti i run.
 
 - **Indipendenza delle osservazioni**: Mann-Whitney assume campioni indipendenti; le 15 esecuzioni sono sequenziali sulla stessa macchina e condividono stato di cache, scheduling e termica, quindi il test e' *liberale* (p-value ottimisti). Per questo le conclusioni richiedono anche un effect size r >= 0.8 e la stabilita' fra sessioni (sez. 10.3), che e' il vero controllo empirico dell'autocorrelazione. Un warm-up singolo e' sufficiente anche per Q07 e Q10: i loro CI sono i piu' stretti del benchmark (±2% della mediana).
+
+- **Ordine di esecuzione**: in ogni iterazione la query gira prima su Postgres e poi su Neo4j (interleaving), e le query si susseguono sempre da Q01 a Q12; l'ordine non e' randomizzato. L'interleaving controlla la deriva temporale (termica, processi di background) distribuendola su entrambi i sistemi; l'interferenza di cache fra i due e' trascurabile perche' entrambi i working set stanno in RAM (nessun piano mostra letture da disco).
 
 - **Parametri per nome**: le query parametrizzate per nome (Q08-Q10, Q06) assumono che il nome sia univoco; e' verificato per i valori usati (un solo `Lionel Messi`, `Andrea Pirlo`, `Real Madrid CF`) ma non in generale (163 nomi di giocatore e 3 di squadra sono omonimi). Per un uso generale i parametri andrebbero passati per chiave.
 

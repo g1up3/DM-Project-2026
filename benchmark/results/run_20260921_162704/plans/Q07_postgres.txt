@@ -1,0 +1,39 @@
+Sort  (cost=78404.96..78405.10 rows=55 width=26) (actual time=471.348..471.360 rows=539.00 loops=1)
+  Sort Key: p.player_name, p.player_api_id
+  Sort Method: quicksort  Memory: 49kB
+  Buffers: shared hit=315290
+  ->  GroupAggregate  (cost=7.21..78403.37 rows=55 width=26) (actual time=21.133..470.535 rows=539.00 loops=1)
+        Group Key: p.player_api_id
+        Filter: (count(DISTINCT m.season) = 8)
+        Rows Removed by Filter: 10521
+        Buffers: shared hit=315290
+        ->  Incremental Sort  (cost=7.21..75553.71 rows=542281 width=28) (actual time=1.014..433.130 rows=542281.00 loops=1)
+              Sort Key: p.player_api_id, m.season
+              Presorted Key: p.player_api_id
+              Full-sort Groups: 6303  Sort Method: quicksort  Average Memory: 28kB  Peak Memory: 28kB
+              Pre-sorted Groups: 5710  Sort Method: quicksort  Average Memory: 29kB  Peak Memory: 29kB
+              Buffers: shared hit=315290
+              ->  Merge Join  (cost=1.01..53327.79 rows=542281 width=28) (actual time=0.136..277.359 rows=542281.00 loops=1)
+                    Merge Cond: (l.player_api_id = p.player_api_id)
+                    Buffers: shared hit=315290
+                    ->  Nested Loop  (cost=0.72..45811.67 rows=542281 width=14) (actual time=0.114..242.031 rows=542281.00 loops=1)
+                          Buffers: shared hit=304375
+                          ->  Index Scan using ix_lineup_player on match_lineup l  (cost=0.42..23786.45 rows=542281 width=8) (actual time=0.019..99.025 rows=542281.00 loops=1)
+                                Index Searches: 1
+                                Buffers: shared hit=228712
+                          ->  Memoize  (cost=0.30..0.35 rows=1 width=14) (actual time=0.000..0.000 rows=1.00 loops=542281)
+                                Cache Key: l.match_api_id
+                                Cache Mode: logical
+                                Hits: 517060  Misses: 25221  Evictions: 0  Overflows: 0  Memory Usage: 2858kB
+                                Buffers: shared hit=75663
+                                ->  Index Scan using match_pkey on match m  (cost=0.29..0.34 rows=1 width=14) (actual time=0.001..0.001 rows=1.00 loops=25221)
+                                      Index Cond: (match_api_id = l.match_api_id)
+                                      Index Searches: 25221
+                                      Buffers: shared hit=75663
+                    ->  Index Scan using player_pkey on player p  (cost=0.29..710.16 rows=11060 width=18) (actual time=0.017..3.222 rows=11060.00 loops=1)
+                          Index Searches: 1
+                          Buffers: shared hit=10915
+Planning:
+  Buffers: shared hit=28
+Planning Time: 0.914 ms
+Execution Time: 471.438 ms
