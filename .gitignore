@@ -37,6 +37,7 @@ slide-*.png
 pptx_build/
 *.pdf
 !Project_Proposal_dangelica_leone.pdf
+!PostgreSQL_vs_Neo4j_DAngelica_Leone.pdf
 
 # Generated CSVs (rigenerabili dalla pipeline)
 *.csv

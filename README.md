@@ -131,7 +131,8 @@ Neo4j su Q07 si allarga e quello di Postgres su Q09 pure.
 ├── tests/                        # Test unitari dell'harness (pytest)
 ├── Makefile                      # Entry-point unico: make benchmark / report / test
 ├── LICENSE                       # MIT (codice); il dataset resta ODbL, non ridistribuito
-├── PostgreSQL_vs_Neo4j_DAngelica_Leone.pptx   # Slide deck della presentazione
+├── PostgreSQL_vs_Neo4j_DAngelica_Leone.pptx   # Slide deck della presentazione (16 slide + 4 di backup)
+├── PostgreSQL_vs_Neo4j_DAngelica_Leone.pdf    # Lo stesso deck in PDF, font incorporati
 ├── Live_Demo_Script.md           # Sceneggiatura della demo live (~5 min)
 ├── clean/                        # CSV puliti generati da transform.py (non committati)
 └── database/database.sqlite      # Sorgente Kaggle (non committato)
