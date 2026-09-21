@@ -365,17 +365,18 @@ def main():
     md.append("\n## 2. Risultati\n")
     ci_cols = " CI 95% PG | CI 95% Neo4j |" if has_ci else ""
     ci_hdr  = " :---: | :---: |" if has_ci else ""
-    # Correzione di Holm-Bonferroni per i confronti multipli (12 test, alpha 0.05)
+    # Correzione di Holm-Bonferroni per i confronti multipli (12 test, alpha 0.05):
+    # letta da significance.csv se il run l'ha prodotta, altrimenti ricalcolata
+    # con la stessa funzione dell'harness (run precedenti alla colonna).
+    from run_benchmark import holm_correction
     holm_sig = {}
-    pvals = [(q, float(sig_data[q]["p_value"])) for q in qids
-             if sig_data.get(q, {}).get("p_value") not in (None, "", "None")]
-    m_tests = len(pvals)
-    for rank, (q, p) in enumerate(sorted(pvals, key=lambda t: t[1])):
-        holm_sig[q] = p <= 0.05 / (m_tests - rank)
-        if not holm_sig[q]:            # Holm: dal primo non rigetto in poi, nessun rigetto
-            for q2, _ in sorted(pvals, key=lambda t: t[1])[rank + 1:]:
-                holm_sig[q2] = False
-            break
+    m_tests = sum(1 for q in qids if sig_data.get(q, {}).get("p_value") not in (None, "", "None"))
+    if all(sig_data.get(q, {}).get("significant_holm") not in (None, "") for q in qids):
+        holm_sig = {q: str(sig_data[q]["significant_holm"]) == "True" for q in qids}
+    else:
+        pq = [q for q in qids if sig_data.get(q, {}).get("p_value") not in (None, "", "None")]
+        for q, h in zip(pq, holm_correction([float(sig_data[q]["p_value"]) for q in pq])):
+            holm_sig[q] = h
 
     md.append(f"| ID | Query | Categoria | PG (ms) | Neo4j (ms) |{ci_cols} Vincitore | Speedup | p-value | Effect r | Sig | Sig (Holm) | Risultati |")
     md.append(f"|---|---|---|---:|---:|{ci_hdr}---|---:|---:|---:|:---:|:---:|:---:|")

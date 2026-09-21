@@ -18,7 +18,7 @@ Output:
                                      median_ms, min_ms, max_ms, iqr_ms,
                                      ci95_lo, ci95_hi,
                                      n_rows, equal_results)
-        significance.csv    righe = (query_id, u_stat, p_value, significant,
+        significance.csv    righe = (query_id, u_stat, p_value, significant, significant_holm,
                                      effect_size, winner, speedup)
         plans/              EXPLAIN ANALYZE e PROFILE per ogni query
         db_config.json      parametri di configurazione runtime
@@ -431,6 +431,24 @@ def bootstrap_ci(data: list[float], n_boot: int = 10000, alpha: float = 0.05,
     return lo, hi
 
 
+def holm_correction(p_values: list[float | None], alpha: float = 0.05) -> list[bool]:
+    """Holm-Bonferroni step-down over the whole family of tests.
+
+    Returns booleans aligned with the input order (True = still significant
+    after the correction). None p-values (inconclusive tests) are never
+    significant and do not count in the family size.
+    """
+    idx = [i for i, p in enumerate(p_values) if p is not None]
+    m = len(idx)
+    out = [False] * len(p_values)
+    for rank, i in enumerate(sorted(idx, key=lambda i: p_values[i])):
+        if p_values[i] <= alpha / (m - rank):
+            out[i] = True
+        else:
+            break                      # step-down: from the first non-rejection on, nothing is rejected
+    return out
+
+
 def significance_test(pg_times: list[float], neo_times: list[float]) -> dict:
     """Mann-Whitney U test + effect size (rapporto mediane)."""
     if len(pg_times) < 3 or len(neo_times) < 3:
@@ -630,6 +648,12 @@ def main():
         pg_conn.close()
         driver.close()
 
+    # Holm-Bonferroni sull'intera famiglia di test (una colonna in significance.csv,
+    # cosi' il claim "significativo dopo la correzione" e' riproducibile dal CSV)
+    holm = holm_correction([r["p_value"] for r in significance_rows])
+    for r, h in zip(significance_rows, holm):
+        r["significant_holm"] = h
+
     # --- scrivo CSV ---
     timings_path = out_dir / "timings.csv"
     summary_path = out_dir / "summary.csv"
@@ -652,7 +676,7 @@ def main():
     with open(sig_path, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=[
             "query_id", "u_stat", "p_value", "significant",
-            "effect_size", "winner", "speedup"
+            "effect_size", "winner", "speedup", "significant_holm"
         ])
         w.writeheader()
         w.writerows(significance_rows)

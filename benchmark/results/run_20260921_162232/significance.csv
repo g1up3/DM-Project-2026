@@ -1,13 +1,13 @@
-query_id,u_stat,p_value,significant,effect_size,winner,speedup
-Q01,165.0,0.031017,True,0.4667,neo4j,1.39
-Q02,0.0,3e-06,True,1.0,postgres,2.64
-Q03,160.0,0.051239,False,0.4222,not significant,1.33
-Q04,43.0,0.00421,True,0.6178,postgres,1.38
-Q05,212.0,4e-05,True,0.8844,neo4j,1.81
-Q06,211.0,4.8e-05,True,0.8756,neo4j,3.1
-Q07,225.0,3e-06,True,1.0,neo4j,1.69
-Q08,196.0,0.000576,True,0.7422,neo4j,1.64
-Q09,0.0,3e-06,True,1.0,postgres,3.21
-Q10,225.0,3e-06,True,1.0,neo4j,40.25
-Q11,224.0,4e-06,True,0.9911,neo4j,1.7
-Q12,225.0,3e-06,True,1.0,neo4j,5.12
+query_id,u_stat,p_value,significant,effect_size,winner,speedup,significant_holm
+Q01,165.0,0.031017,True,0.4667,neo4j,1.39,False
+Q02,0.0,3e-06,True,1.0,postgres,2.64,True
+Q03,160.0,0.051239,False,0.4222,not significant,1.33,False
+Q04,43.0,0.00421,True,0.6178,postgres,1.38,True
+Q05,212.0,4e-05,True,0.8844,neo4j,1.81,True
+Q06,211.0,4.8e-05,True,0.8756,neo4j,3.1,True
+Q07,225.0,3e-06,True,1.0,neo4j,1.69,True
+Q08,196.0,0.000576,True,0.7422,neo4j,1.64,True
+Q09,0.0,3e-06,True,1.0,postgres,3.21,True
+Q10,225.0,3e-06,True,1.0,neo4j,40.25,True
+Q11,224.0,4e-06,True,0.9911,neo4j,1.7,True
+Q12,225.0,3e-06,True,1.0,neo4j,5.12,True
