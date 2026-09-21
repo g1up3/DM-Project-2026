@@ -1,6 +1,6 @@
 # Live demo script — 5 minutes
 
-Companion to the slides. The demo runs after slide 15 (Verdict); slides 16-18 are backup.
+Companion to the slides. The demo runs after slide 16 (Verdict); slides 17-20 are backup (20 = the twelve queries in plain words, for the Q&A).
 Total time: **~5 minutes**. Speak in English.
 
 ## Setup before the talk
@@ -17,7 +17,7 @@ Have ready, on screen (Cmd+Tab between them):
 Pre-warm both DBs by running each demo query once in advance — the first
 execution after a cold start is always slower and ruins the on-stage timing.
 
-Project repository (tag `v1.0-submission`): https://github.com/g1up3/DM-Project-2026
+Project repository (tag `v1.2-submission`): https://github.com/g1up3/DM-Project-2026
 - Giuseppe: https://github.com/g1up3
 - Nicolas:  https://github.com/theunick
 
@@ -186,7 +186,7 @@ MATCH (m:Match) REMOVE m.totalGoals;
 
 ## Act 4 — Closing (~30 s)
 
-Switch back to the slides (slide 15 — Verdict).
+Switch back to the slides (slide 16 — Verdict).
 
 > "So, the verdict. **PostgreSQL** when the workload is OLAP, integrity is
 >  paramount, and the schema is stable. **Neo4j** when the data is naturally
