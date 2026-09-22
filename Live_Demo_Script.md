@@ -17,7 +17,7 @@ Have ready, on screen (Cmd+Tab between them):
 Pre-warm both DBs by running each demo query once in advance — the first
 execution after a cold start is always slower and ruins the on-stage timing.
 
-Project repository (tag `v1.2-submission`): https://github.com/g1up3/DM-Project-2026
+Project repository (tag `v1.3-submission`): https://github.com/g1up3/DM-Project-2026
 - Giuseppe: https://github.com/g1up3
 - Nicolas:  https://github.com/theunick
 

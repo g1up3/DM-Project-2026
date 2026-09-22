@@ -967,7 +967,7 @@ def main():
 
     cat_a = [q for q in qids if pivot[q]["postgres"]["category"] == "A_relational"]
     def _sig_winner(q):
-        if sig_data.get(q, {}).get("significant") != "True":
+        if not holm_sig.get(q, False):     # stesso criterio delle slide: significativo dopo Holm
             return None
         return "postgres" if float(pivot[q]["postgres"]["median_ms"]) < float(pivot[q]["neo4j"]["median_ms"]) else "neo4j"
     a_pg = [q for q in cat_a if _sig_winner(q) == "postgres"]
@@ -976,9 +976,9 @@ def main():
     q09_speedup = (ne_medians[qids.index("Q09")] / pg_medians[qids.index("Q09")]) if "Q09" in qids else 0
     a_max = max(max(pg_medians[qids.index(q)], ne_medians[qids.index(q)]) for q in cat_a) if cat_a else 0
     md.append(f"\n1. **Le aggregazioni OLAP-light (categoria A) sono parita' operativa**: "
-              f"in questo run {len(a_pg)} query su {len(cat_a)} significativamente a favore "
+              f"in questo run, dopo la correzione di Holm, {len(a_pg)} query su {len(cat_a)} a favore "
               f"di Postgres ({', '.join(a_pg) or '—'}), {len(a_ne)} a favore di Neo4j "
-              f"({', '.join(a_ne) or '—'}), {len(a_ns)} non significative "
+              f"({', '.join(a_ne) or '—'}), {len(a_ns)} non significativ{'a' if len(a_ns) == 1 else 'e'} "
               f"({', '.join(a_ns) or '—'}); tutte le mediane sono sotto i {a_max:.0f} ms e il "
               f"vincitore cambia da un run all'altro (sez. 10.3: in altri run Q03 e Q04 "
               f"andavano a Postgres). A questa scala l'ottimizzatore relazionale non ha "

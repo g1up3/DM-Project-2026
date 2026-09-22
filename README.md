@@ -121,6 +121,7 @@ Neo4j su Q07 si allarga e quello di Postgres su Q09 pure.
 │   ├── sensitivity_q10.py        #  sensitivity semantica shortest path (3 varianti, 8 coppie)
 │   ├── sensitivity_scale.py      #  scalabilita' misurata: Q07/Q09 su 2, 4, 8 stagioni
 │   ├── generate_report.py        #  Markdown + 6 grafici PNG + threats to validity
+│   ├── deck_charts.py            #  grafici delle slide, generati dai CSV del run di riferimento
 │   ├── results/run_<ts>/         #  CSV, significance, plans/, db_config
 │   ├── results/index_ablation/   #  output matrice di ablazione
 │   ├── results/sensitivity/      #  output analisi di sensibilita'

@@ -16,6 +16,7 @@ benchmark/
   sensitivity_q10.py    # analisi di sensibilita': semantica dello shortest path (Q10)
   sensitivity_scale.py  # scalabilita' misurata: Q07/Q09 su 2, 4, 8 stagioni
   generate_report.py    # produce il report Markdown + 6 grafici PNG
+  deck_charts.py        # grafici delle slide (reports/figures/deck/), letti dal run di riferimento
   results/              # output di ogni run (timestamped)
   results/index_ablation/  # output dell'esperimento di index ablation
   results/sensitivity/  # output dell'analisi di sensibilita'
@@ -154,7 +155,7 @@ Per ciascuna query e ciascun sistema:
    rimuove colonna/proprieta'). Il numero di righe/proprieta' modificate e'
    letto dai driver e confrontato fra i due sistemi. `--write-mode rollback`
    riproduce il metodo storico, che sottostima Neo4j (le mutazioni restano in
-   memoria fino al commit: Q12 risultava 11x invece di 4.5x).
+   memoria fino al commit: Q12 risultava 11x invece di ~5x).
 
 ## Categorie delle query
 
